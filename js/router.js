@@ -11,7 +11,7 @@ const normalize = (path) => {
   return clean !== "/" ? clean.replace(/\/+$/, "") : "/";
 };
 
-const matchRoute = (path) => routes.find(r => r.path === path) || null;
+const matchRoute = (path) => routes.find((r) => r.path === path) || null;
 
 async function loadView(viewPath) {
   const res = await fetch(viewPath, { cache: "no-store" });
@@ -19,16 +19,35 @@ async function loadView(viewPath) {
   return await res.text();
 }
 
-export async function navigateTo(path) {
+// ---- HASH ROUTING HELPERS ----
+function getHashPath() {
+  // URL: https://site.com/#/proizvodi  -> raw: "/proizvodi"
+  // URL: https://site.com/#/          -> raw: "/"
+  const raw = window.location.hash.replace(/^#/, ""); // "#/x" -> "/x"
+  return normalize(raw || "/");
+}
+
+function setHashPath(path) {
   const p = normalize(path);
-  window.history.pushState({}, "", p);
-  await router();
+  // keep consistent format "#/" for home
+  window.location.hash = p === "/" ? "#/" : `#${p}`;
+}
+
+// Public API
+export function navigateTo(pathOrHref) {
+  // Allow passing "/#/proizvodi" OR "/proizvodi"
+  const s = String(pathOrHref || "");
+  const afterHash = s.includes("#") ? (s.split("#")[1] || "/") : s; // "/#/x" -> "/x"
+  setHashPath(afterHash);
+  // router() will run via "hashchange"
 }
 
 export async function router() {
   const app = document.getElementById("app");
-  const path = normalize(window.location.pathname);
-  const route = matchRoute(path) || { path: "/404", view: "/views/home.html", title: "Magnolia" };
+  const path = getHashPath();
+
+  const route =
+    matchRoute(path) || { path: "/404", view: "/views/home.html", title: "Magnolia" };
 
   try {
     const html = await loadView(route.view);
@@ -36,10 +55,11 @@ export async function router() {
     document.title = route.title || "Magnolia";
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // highlight active nav
-    document.querySelectorAll(".nav__link").forEach(a => {
-      const href = normalize(a.getAttribute("href"));
-      a.classList.toggle("is-active", href === path);
+    // highlight active nav (compare hash paths)
+    document.querySelectorAll(".nav__link").forEach((a) => {
+      const href = a.getAttribute("href") || "";
+      const linkPath = normalize((href.split("#")[1]) || "/"); // "/#/x" -> "/x"
+      a.classList.toggle("is-active", linkPath === path);
     });
 
     // optional: run per-view init hooks

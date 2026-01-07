@@ -447,6 +447,157 @@ img{ max-width:100%; display:block; }
   padding-bottom: .12em;  /* da repovi slova imaju prostora */
 }
 
+.product{
+  border:1px solid var(--line);
+  border-radius: var(--radius);
+  background:#fff;
+  overflow:hidden;
+  transition: box-shadow .25s ease;
+}
+
+.product:hover{
+  box-shadow: var(--shadow);
+}
+
+.product__image img{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+}
+
+.product__body{
+  padding:16px;
+}
+
+.product__name{
+  margin:0 0 6px;
+  font-weight:800;
+  color: var(--navy);
+}
+
+.product__desc{
+  margin:0;
+  font-size:14px;
+  color: var(--muted);
+}
+
+.product__desc--short{
+  display:-webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow:hidden;
+}
+
+.product__desc--full{
+  display:none;
+  margin-top:8px;
+  color: var(--muted);
+}
+
+.product__toggle{
+  margin-top:10px;
+  background:none;
+  border:none;
+  cursor:pointer;
+  width:100%;
+  display:flex;
+  justify-content:center;
+}
+
+.product__toggle .arrow{
+  font-size:18px;
+  transition: transform .25s ease;
+}
+
+.product.is-open .product__desc--short{
+  display:none;
+}
+
+.product.is-open .product__desc--full{
+  display:block;
+}
+
+.product.is-open .arrow{
+  transform: rotate(180deg);
+}
+
+.product__body{
+  transition: all .25s ease;
+}
+
+.product__toggle{
+  margin-top:10px;
+  background:none;
+  border:none;
+  cursor:pointer;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  padding: 10px 0;
+}
+
+.product__toggle .chev{
+  width: 14px;
+  height: 14px;
+  border-right: 3px solid var(--navy);
+  border-bottom: 3px solid var(--navy);
+  transform: rotate(45deg);
+  transition: transform .25s ease, opacity .25s ease;
+  opacity: .9;
+}
+
+/* kad je otvoreno - rotiraj da "gleda" gore */
+.product.is-open .product__toggle .chev{
+  transform: rotate(-135deg);
+}
+
+.product__toggle:hover .chev,
+.product__toggle:focus-visible .chev{
+  opacity: 1;
+  transform: rotate(45deg) scale(1.08);
+}
+
+.product.is-open .product__toggle:hover .chev,
+.product.is-open .product__toggle:focus-visible .chev{
+  transform: rotate(-135deg) scale(1.08);
+}
+
+/* wrapper za sliku – prati radius kartice */
+.product__image{
+  border-radius: 16px;      /* ili var(--radius) ako hoćeš isto kao card */
+  overflow: hidden;
+}
+
+/* slika normalno */
+.product__image img{
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+  transition: transform .35s ease;
+  transform: scale(1);
+}
+
+.product__image:hover img{
+  transform: scale(1.06);
+}
+
+.product__image{
+  position: relative;
+}
+
+.product__image::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,.06);
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.product:hover .product__image::after{
+  opacity: 1;
+}
 
 
 
