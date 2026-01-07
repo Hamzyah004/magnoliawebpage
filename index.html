@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="bs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Magnolia Natural Cosmetics</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner topbar__3col">
+
+      <!-- LEFT: brand text -->
+      <a class="brand-text" href="/" data-link>
+        <span class="brand-text__main">MAGNOLIA</span>
+        <span class="brand-text__sub">NATURAL COSMETICS</span>
+      </a>
+
+      <!-- CENTER: logo -->
+      <a class="brand-logo-center" href="/" data-link aria-label="Magnolia Home">
+        <img src="assets/img/logo.png" alt="Magnolia Natural Cosmetics logo" />
+      </a>
+
+      <!-- RIGHT: navigation -->
+      <nav class="nav">
+        <a class="nav__link" href="/" data-link>Home</a>
+        <a class="nav__link" href="/o-nama" data-link>O nama</a>
+        <a class="nav__link" href="/proizvodi" data-link>Proizvodi</a>
+        <a class="nav__link nav__cta" href="/kontakt" data-link>Kontakt</a>
+      </nav>
+
+      <!-- mobile -->
+      <button class="nav__toggle" aria-label="Otvori meni" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+    </div>
+  </header>
+
+
+  <main id="app" class="app" aria-live="polite"></main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p>© <span id="y"></span> Magnolia Natural Cosmetics</p>
+      <p class="muted">Prirodna njega. Clean formulacije. Nježan rezultat.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
