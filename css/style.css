@@ -599,5 +599,259 @@ img{ max-width:100%; display:block; }
   opacity: 1;
 }
 
+/* da kartica djeluje klikabilno */
+.product{
+  cursor: pointer;
+}
+
+/* MODAL */
+.modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 999;
+}
+
+.modal.is-open{ display: block; }
+
+.modal__overlay{
+  position:absolute;
+  inset:0;
+  background: rgba(15,23,42,.35);
+  backdrop-filter: blur(10px);
+}
+
+.modal__dialog{
+  position: relative;
+  width: min(920px, calc(100% - 28px));
+  margin: 60px auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: modalIn .18s ease-out;
+}
+
+@keyframes modalIn{
+  from{ transform: translateY(10px); opacity: 0; }
+  to{ transform: translateY(0); opacity: 1; }
+}
+
+.modal__close{
+  position:absolute;
+  top: 10px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.modal__content{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.modal__image img{
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  object-fit: cover;
+  display:block;
+}
+
+.modal__text{
+  padding: 22px;
+}
+
+@media (max-width: 900px){
+  .modal__dialog{ margin: 24px auto; }
+  .modal__content{ grid-template-columns: 1fr; }
+  .modal__image img{ min-height: 260px; }
+}
+
+#modal-desc{
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+.modal__dialog{
+  position: relative;
+  width: min(920px, calc(100% - 28px));
+  height: min(80vh, 680px);   /* 👈 KLJUČ */
+  margin: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: modalIn .18s ease-out;
+}
+
+.modal__content{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;              /* KLJUČ */
+}
+
+.modal__image{
+  height: 100%;
+}
+
+.modal__image img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.modal__text{
+  padding: 22px;
+  overflow-y: auto;     /* 👈 KLJUČ */
+}
+
+@media (max-width: 900px){
+  .modal__dialog{
+    height: 90vh;
+  }
+
+  .modal__content{
+    grid-template-columns: 1fr;
+  }
+
+  .modal__image{
+    height: 220px;      /* slika gore, fiksna */
+  }
+
+  .modal__text{
+    overflow-y: auto;
+  }
+}
+
+.modal__text::after{
+  content:"";
+  position: sticky;
+  bottom: 0;
+  display: block;
+  height: 24px;
+  background: linear-gradient(transparent, #fff);
+}
+
+.modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 999;
+}
+
+.modal.is-open{
+  display: flex;              /* 👈 umjesto block */
+  align-items: center;        /* vertikalno centar */
+  justify-content: center;    /* horizontalno centar */
+  padding: 24px;              /* da ne lijepi uz ivice */
+}
+
+.modal__overlay{
+  position: absolute;
+  inset: 0;
+  background: rgba(15,23,42,.35);
+  backdrop-filter: blur(10px);
+}
+
+.modal__dialog{
+  position: relative;
+  z-index: 1;                 /* iznad overlay-a */
+  margin: 0;                  /* 👈 ovo je bilo što ga je guralo gore */
+}
+
+#modal-desc strong{
+  display: block;
+  margin-top: 18px;
+  margin-bottom: 6px;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+#modal-desc{
+  line-height: 1.65;
+}
+
+#modal-desc .modal-h{
+  display: block;
+  margin: 16px 0 8px;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+/* generalno: da grid scroll radi kako treba */
+.modal__content{
+  height: 100%;
+  min-height: 0;
+}
+
+.modal__text{
+  min-height: 0;          /* 👈 KLJUČ */
+  overflow-y: auto;       /* tekst scroll */
+  background: #fff;       /* da nikad ne “prozirno” prelazi preko slike */
+  padding-bottom: 28px;   /* da zadnje linije ne upadaju pod ivicu */
+}
+
+/* MOBILE */
+@media (max-width: 900px){
+  .modal.is-open{
+    padding: 14px;        /* malo više prostora oko modala na mobitelu */
+  }
+
+  .modal__dialog{
+    height: 90dvh;        /* 👈 bolje od 90vh na telefonu (adresna traka) */
+    width: min(520px, calc(100% - 12px));
+  }
+
+  .modal__content{
+    grid-template-columns: 1fr;
+    grid-template-rows: 240px 1fr;  /* 👈 slika fiksno, tekst zauzme ostatak */
+    height: 100%;
+    min-height: 0;
+  }
+
+  .modal__image{
+    height: 240px;
+  }
+
+  .modal__image img{
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.modal__text::after,
+#modal-desc::after{
+  content: none !important;
+  display: none !important;
+}
+
+.modal{ z-index: 9999; }          /* iznad svega */
+
+.modal__overlay{
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;           /* mora hvatati klik */
+}
+
+.modal__dialog{
+  position: relative;
+  z-index: 1;                     /* iznad overlay-a unutar modala */
+}
+
+
+
+
+
 
 

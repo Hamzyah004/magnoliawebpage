@@ -38,13 +38,33 @@
     </div>
   </header>
 
+  <div class="modal" id="product-modal" aria-hidden="true">
+  <div class="modal__overlay" data-modal-close></div>
+
+  <div class="modal__dialog" role="dialog" aria-modal="true" aria-label="Detalji proizvoda">
+      <button class="modal__close" type="button" aria-label="Zatvori" data-modal-close>×</button>
+
+      <div class="modal__content">
+        <div class="modal__image">
+          <img id="modal-img" src="" alt="">
+        </div>
+
+        <div class="modal__text">
+          <h2 class="h2" id="modal-title"></h2>
+          <p class="lead" id="modal-desc" style="margin-top:14px;"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 
   <main id="app" class="app" aria-live="polite"></main>
 
   <footer class="footer">
     <div class="container footer__inner">
       <p>© <span id="y"></span> Magnolia Natural Cosmetics</p>
-      <p class="muted">Prirodna njega. Clean formulacije. Nježan rezultat.</p>
+      <p class="muted">Prirodna njega. Čiste formulacije. Nježan rezultat.</p>
     </div>
   </footer>
 
