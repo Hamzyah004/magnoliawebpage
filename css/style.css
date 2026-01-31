@@ -849,6 +849,33 @@ img{ max-width:100%; display:block; }
   z-index: 1;                     /* iznad overlay-a unutar modala */
 }
 
+/* STATIC INFO CARD – Zašto Magnolia? */
+.product.product--static{
+  cursor: default;
+  transition: transform .35s cubic-bezier(.2,.8,.2,1),
+              box-shadow .35s cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
+
+.product.product--static:hover{
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: var(--shadow);
+}
+
+.ig-link{
+  color: var(--navy);
+  opacity: .85;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.ig-link:hover{
+  opacity: 1;
+  transform: translateY(-1px) scale(1.05);
+}
+
+
+
+
+
 
 
 

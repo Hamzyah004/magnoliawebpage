@@ -110,6 +110,9 @@ function initProductModal() {
     const product = e.target.closest(".product");
     if (!product) return;
 
+    // ⛔ ne otvaraj modal za static kartice
+    if (product.classList.contains("product--static")) return;
+
     openModal(product);
   });
 

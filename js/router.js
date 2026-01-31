@@ -63,7 +63,14 @@ export async function router() {
     });
 
     // optional: run per-view init hooks
-    if (path === "/kontakt") initContactForm();
+    if (path === "/kontakt") {
+      if (typeof initContactForm === "function") {
+        initContactForm();
+      } else {
+        console.warn("initContactForm nije dostupan u router.js");
+      }
+    }
+
   } catch (e) {
     app.innerHTML = `
       <section class="section">
@@ -79,18 +86,35 @@ function initContactForm() {
   const form = document.querySelector("[data-contact-form]");
   if (!form) return;
 
-  form.addEventListener("submit", (e) => {
+  // guard: spriječi duplo bindanje kad se vraćaš na kontakt view
+  if (form.dataset.bound === "1") return;
+  form.dataset.bound = "1";
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    if (!window.emailjs) {
+      alert("Email servis nije učitan. Provjeri EmailJS script u index.html.");
+      return;
+    }
+
     const btn = form.querySelector("button[type='submit']");
+    const originalText = btn.textContent;
+
     btn.disabled = true;
     btn.textContent = "Slanje…";
 
-    // TODO: ovdje ubaci EmailJS / Netlify Forms / backend endpoint
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = "Pošalji poruku";
+    try {
+      await emailjs.sendForm("service_wwxmpm7", "template_fh2tjxy", form);
       form.reset();
       alert("Hvala! Poruka je poslana.");
-    }, 600);
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      alert("Greška pri slanju. Pokušaj ponovo.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   });
 }
+
