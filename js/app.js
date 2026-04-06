@@ -54,6 +54,7 @@ function initProductModal() {
   if (!modal) return;
 
   const titleEl = document.getElementById("modal-title");
+  const priceEl = document.getElementById("modal-price");
   const descEl = document.getElementById("modal-desc");
   const imgEl = document.getElementById("modal-img");
 
@@ -82,10 +83,16 @@ function initProductModal() {
 
   const openModal = (productEl) => {
     const title = productEl.dataset.title || "";
+    const price = productEl.dataset.price || "";
     const desc = productEl.dataset.desc || "";
     const img = productEl.dataset.img || "";
 
     titleEl.textContent = title;
+
+    if (priceEl) {
+      priceEl.textContent = price;
+    }
+
     descEl.innerHTML = formatDesc(desc);
 
     imgEl.src = img;

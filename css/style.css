@@ -879,6 +879,28 @@ img{ max-width:100%; display:block; }
   transform: translateY(-1px) scale(1.05);
 }
 
+#modal-price {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.4px;
+  color: rgba(0, 0, 0, 0.48);
+  font-style: italic;
+}
+
+.card .muted strong {
+  color: #111;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.card .muted p {
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+
 
 
 
