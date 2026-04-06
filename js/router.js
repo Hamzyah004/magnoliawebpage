@@ -1,8 +1,8 @@
 const routes = [
-  { path: "/", view: "/views/home.html", title: "Home • Magnolia" },
-  { path: "/o-nama", view: "/views/about.html", title: "O nama • Magnolia" },
-  { path: "/proizvodi", view: "/views/products.html", title: "Proizvodi • Magnolia" },
-  { path: "/kontakt", view: "/views/contact.html", title: "Kontakt • Magnolia" },
+  { path: "/", view: "./views/home.html", title: "Home • Magnolia" },
+  { path: "/o-nama", view: "./views/about.html", title: "O nama • Magnolia" },
+  { path: "/proizvodi", view: "./views/products.html", title: "Proizvodi • Magnolia" },
+  { path: "/kontakt", view: "./views/contact.html", title: "Kontakt • Magnolia" },
 ];
 
 const normalize = (path) => {
@@ -47,7 +47,7 @@ export async function router() {
   const path = getHashPath();
 
   const route =
-    matchRoute(path) || { path: "/404", view: "/views/home.html", title: "Magnolia" };
+    matchRoute(path) || { path: "/404", view: "./views/home.html", title: "Magnolia" };
 
   try {
     const html = await loadView(route.view);
