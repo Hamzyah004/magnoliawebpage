@@ -58,6 +58,18 @@ function initProductModal() {
   const descEl = document.getElementById("modal-desc");
   const imgEl = document.getElementById("modal-img");
 
+  const dialogEl = modal.querySelector(".modal__dialog");
+  const contentEl = modal.querySelector(".modal__content");
+  const textEl = modal.querySelector(".modal__text");
+
+  const resetModalScroll = () => {
+    modal.scrollTop = 0;
+    dialogEl?.scrollTo(0, 0);
+    contentEl?.scrollTo(0, 0);
+    textEl?.scrollTo(0, 0);
+    descEl?.scrollTo(0, 0);
+  };
+
   const formatDesc = (text) => {
     let t = String(text || "");
 
@@ -101,9 +113,14 @@ function initProductModal() {
     modal.classList.add("is-open");
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+
+    requestAnimationFrame(() => {
+      resetModalScroll();
+    });
   };
 
   const closeModal = () => {
+    resetModalScroll();
     modal.classList.remove("is-open");
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
@@ -154,6 +171,22 @@ function initProductModal() {
 
 initProductModal();
 
+const scrollBtn = document.getElementById("scrollTopBtn");
+
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 300) {
+    scrollBtn.classList.add("show");
+  } else {
+    scrollBtn.classList.remove("show");
+  }
+});
+
+scrollBtn.addEventListener("click", () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+});
 
 
 if (!window.location.hash) window.location.hash = "#/";
