@@ -3,6 +3,9 @@ const routes = [
   { path: "/o-nama", view: "./views/about.html", title: "O nama • Magnolia" },
   { path: "/proizvodi", view: "./views/products.html", title: "Proizvodi • Magnolia" },
   { path: "/kontakt", view: "./views/contact.html", title: "Kontakt • Magnolia" },
+  { path: "/login", view: "./views/login.html", title: "Login • Magnolia" },
+  { path: "/admin", view: "./views/admin.html", title: "Admin • Magnolia" },
+  { path: "/checkout", view: "./views/checkout.html", title: "Checkout • Magnolia" },
 ];
 
 const normalize = (path) => {
@@ -46,6 +49,18 @@ export async function router() {
   const app = document.getElementById("app");
   const path = getHashPath();
 
+  // Basic Auth Check
+  if (path === "/admin") {
+    const isAdmin = sessionStorage.getItem("isAdmin") === "true";
+    const expiry = parseInt(sessionStorage.getItem("adminExpiry") || "0");
+    const isSessionValid = isAdmin && Date.now() < expiry;
+
+    if (!isSessionValid) {
+      navigateTo("/login");
+      return;
+    }
+  }
+
   const route =
     matchRoute(path) || { path: "/404", view: "./views/home.html", title: "Magnolia" };
 
@@ -68,6 +83,24 @@ export async function router() {
         initContactForm();
       } else {
         console.warn("initContactForm nije dostupan u router.js");
+      }
+    }
+
+    if (path === "/login") {
+      if (typeof initLoginForm === "function") {
+        initLoginForm();
+      }
+    }
+
+    if (path === "/admin") {
+      if (typeof initAdminPanel === "function") {
+        initAdminPanel();
+      }
+    }
+
+    if (path === "/checkout") {
+      if (typeof initCheckout === "function") {
+        initCheckout();
       }
     }
 
