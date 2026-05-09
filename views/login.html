@@ -1,0 +1,23 @@
+<section class="section section--soft" style="min-height: 80vh; display: flex; align-items: center;">
+  <div class="container" style="max-width: 400px;">
+    <div class="card" style="padding: 32px; text-align: center; background: white; border-radius: var(--radius); box-shadow: var(--shadow);">
+      <h2 class="h1 grad-title" style="margin-bottom: 8px;">Admin Prijava</h2>
+      <p class="muted" style="margin-bottom: 24px;">Unesite 2FA kod, poslan na Vaš mail.</p>
+
+      <div id="login-step-1">
+        <button id="send-code-btn" class="btn btn--primary" style="width: 100%;">Pošalji 2FA Kod</button>
+      </div>
+
+      <div id="login-step-2" style="display: none;">
+        <div style="margin-bottom: 20px;">
+          <input type="text" id="2fa-code" placeholder="Enter 6-digit code" maxlength="6" 
+                 style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 1.2rem; text-align: center; letter-spacing: 4px;">
+        </div>
+        <button id="verify-code-btn" class="btn btn--primary" style="width: 100%; margin-bottom: 12px;">Verifikuj & Prijava</button>
+        <button id="resend-code-btn" class="btn btn--ghost" style="width: 100%; font-size: 0.9rem;">Pošaljite Kod ponovo</button>
+      </div>
+      
+      <p id="login-status" style="margin-top: 16px; font-size: 0.9rem; min-height: 1.2em;"></p>
+    </div>
+  </div>
+</section>
