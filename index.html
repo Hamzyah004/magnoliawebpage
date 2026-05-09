@@ -59,14 +59,37 @@
           <h2 class="h2" id="modal-title"></h2>
           <div id="modal-price" style="font-weight:700; color:var(--gold); font-size:1.2rem; margin-top:8px;"></div>
           <button id="modal-add-to-cart" class="btn-add-cart" style="margin-top:20px; padding:14px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-            Dodaj u korpu
+            <span class="btn-add-cart__text">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              Dodaj u korpu
+            </span>
+            <span class="btn-add-cart__check">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </span>
           </button>
           <p class="lead" id="modal-desc" style="margin-top:20px;"></p>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Shipping Info Modal -->
+  <div class="modal" id="shipping-modal" aria-hidden="true">
+    <div class="modal__overlay" data-modal-close></div>
+    <div class="modal__dialog modal__dialog--small" role="dialog" aria-modal="true">
+      <button class="modal__close" type="button" aria-label="Zatvori" data-modal-close>×</button>
+      <div class="modal__text" style="text-align: center; padding: 40px 20px;">
+        <div style="background: var(--soft); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+        </div>
+        <h2 class="h2">Besplatna dostava!</h2>
+        <p class="lead" style="margin: 0 auto;">Podsjećamo vas da za sve narudžbe iznad <strong>99 KM</strong> ostvarujete pravo na besplatnu dostavu.</p>
+        <button class="btn btn--primary" data-modal-close style="margin-top: 24px; min-width: 140px;">U redu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
 
 
 

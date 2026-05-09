@@ -298,15 +298,36 @@ function updateCartUI() {
     `;
   }).join("");
 
-  const shippingKM = 11.00;
+  const shippingKM = subtotalKM >= 99 ? 0 : 11.00;
   const totalKM = subtotalKM + shippingKM;
 
   cartSubtotalEl.textContent = `${subtotalKM.toFixed(2)} KM`;
-  cartShippingEl.textContent = `${shippingKM.toFixed(2)} KM`;
+  cartShippingEl.textContent = shippingKM === 0 ? "BESPLATNO" : `${shippingKM.toFixed(2)} KM`;
   cartTotalEl.textContent = `${totalKM.toFixed(2)} KM`;
 }
 
-window.addToCart = function(product) {
+window.showToast = function(message) {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span>${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("is-leaving");
+    toast.addEventListener("animationend", () => {
+      toast.remove();
+    });
+  }, 2500);
+};
+
+window.addToCart = function(product, btn) {
   const wasEmpty = cart.length === 0;
   const existing = cart.find(item => item.name === product.name);
   
@@ -318,9 +339,24 @@ window.addToCart = function(product) {
   
   saveCart();
   
+  // Show button feedback
+  if (btn) {
+    btn.classList.add("is-success");
+    setTimeout(() => {
+      btn.classList.remove("is-success");
+    }, 2000);
+  }
+
+  // Show toast confirmation (only if it's NOT the first item)
+  if (!wasEmpty) {
+    window.showToast("Proizvod dodan u korpu");
+  }
+
   // Open cart drawer automatically ONLY for the very first item added
   if (wasEmpty) {
     document.getElementById("cart-drawer").classList.add("is-open");
+    // Show shipping modal
+    document.getElementById("shipping-modal").classList.add("is-open");
   }
 };
 
@@ -378,7 +414,14 @@ function initCart() {
       img: productEl.dataset.img
     };
     
-    window.addToCart(product);
+    window.addToCart(product, btn);
+  });
+
+  // Handle shipping modal close buttons
+  document.querySelectorAll("#shipping-modal [data-modal-close]").forEach(btn => {
+    btn.onclick = () => {
+      document.getElementById("shipping-modal").classList.remove("is-open");
+    };
   });
 
   updateCartUI();
@@ -410,8 +453,9 @@ window.initCheckout = function() {
     `;
   }).join("");
 
+  const shipping = subtotal >= 99 ? 0 : 11;
   subtotalEl.textContent = `${subtotal.toFixed(2)} KM`;
-  totalEl.textContent = `${(subtotal + 11).toFixed(2)} KM`;
+  totalEl.textContent = `${(subtotal + shipping).toFixed(2)} KM`;
 
   form.onsubmit = (e) => {
     e.preventDefault();
@@ -425,8 +469,8 @@ window.initCheckout = function() {
       address: `${formData.get("address")}, ${formData.get("city")} ${formData.get("zip")}`,
       items: cart,
       subtotal: subtotal.toFixed(2),
-      shipping: "11.00",
-      total: (subtotal + 11).toFixed(2),
+      shipping: shipping.toFixed(2),
+      total: (subtotal + shipping).toFixed(2),
       status: "Nova"
     };
 
@@ -517,8 +561,9 @@ function initProductModal() {
         name: title,
         price: price,
         img: img
-      });
-      closeModal();
+      }, addBtn);
+      
+      // We no longer close the modal automatically to allow the user to keep browsing or reading
     };
 
     requestAnimationFrame(() => {
