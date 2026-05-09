@@ -1,5 +1,9 @@
 import { router, navigateTo } from "./router.js";
 
+const SUPABASE_URL = "https://rmjtrveqslcklvprikfo.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtanRydmVxc2xja2x2cHJpa2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTY2NjQsImV4cCI6MjA5Mzg5MjY2NH0.7JKU0NgvTTw7pSAQ35GsT6Ka_UNUnN4xoc2aO0awpxU";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // Ukloni "index.html" iz URL-a (da bude /#/..., ne /index.html#/.)
 if (window.location.pathname.endsWith("/index.html")) {
   const newPath = window.location.pathname.replace(/\/index\.html$/, "/");
@@ -138,11 +142,20 @@ window.initAdminPanel = function() {
     refreshBtn.onclick = () => window.refreshAdminDashboard();
   }
 
-  window.refreshAdminDashboard = function() {
+  window.refreshAdminDashboard = async function() {
     const ordersTable = document.getElementById("orders-table-body");
     if (!ordersTable) return;
 
-    const orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
+    const { data: orders, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching orders:", error);
+      ordersTable.innerHTML = `<tr><td colspan="6" style="padding: 48px; text-align: center; color: red;">Greška pri učitavanju narudžbi.</td></tr>`;
+      return;
+    }
     
     // Update Stats - Target only div.h1 inside the stats cards
     const stats = document.querySelectorAll(".card div.h1"); 
@@ -212,29 +225,40 @@ window.initAdminPanel = function() {
 };
 
 // Global management functions
-window.markAsCompleted = function(orderId) {
-  setTimeout(() => {
+window.markAsCompleted = async function(orderId) {
+  setTimeout(async () => {
     if (!confirm("Da li ste sigurni da želite označiti ovu narudžbu kao završenu?")) return;
     
-    const orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-      order.status = "Završena";
-      localStorage.setItem("magnolia_orders", JSON.stringify(orders));
-      if (typeof window.refreshAdminDashboard === "function") {
-        window.refreshAdminDashboard();
-      }
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "Završena" })
+      .eq("id", orderId);
+
+    if (error) {
+      alert("Greška pri ažuriranju narudžbe.");
+      return;
+    }
+
+    if (typeof window.refreshAdminDashboard === "function") {
+      window.refreshAdminDashboard();
     }
   }, 10);
 };
 
-window.deleteOrder = function(orderId) {
-  setTimeout(() => {
+window.deleteOrder = async function(orderId) {
+  setTimeout(async () => {
     if (!confirm("Da li ste sigurni da želite obrisati ovu narudžbu?")) return;
     
-    let orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
-    orders = orders.filter(o => o.id !== orderId);
-    localStorage.setItem("magnolia_orders", JSON.stringify(orders));
+    const { error } = await supabase
+      .from("orders")
+      .delete()
+      .eq("id", orderId);
+
+    if (error) {
+      alert("Greška pri brisanju narudžbe.");
+      return;
+    }
+
     if (typeof window.refreshAdminDashboard === "function") {
       window.refreshAdminDashboard();
     }
@@ -242,12 +266,19 @@ window.deleteOrder = function(orderId) {
 };
 
 // Global for onclick
-window.viewOrder = function(orderId) {
-  const orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
-  const order = orders.find(o => o.id === orderId);
-  if (order) {
-    alert(`Detalji narudžbe ${order.id}:\n\nKupac: ${order.customer}\nAdresa: ${order.address}\nTelefon: ${order.phone}\nProizvodi: ${order.items.map(i => `${i.name} (${i.qty})`).join(", ")}\n\nUkupno: ${order.total} KM`);
+window.viewOrder = async function(orderId) {
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) {
+    alert("Greška pri učitavanju detalja narudžbe.");
+    return;
   }
+
+  alert(`Detalji narudžbe ${order.id}:\n\nKupac: ${order.customer}\nAdresa: ${order.address}\nTelefon: ${order.phone}\nProizvodi: ${order.items.map(i => `${i.name} (${i.qty})`).join(", ")}\n\nUkupno: ${order.total} KM`);
 };
 
 // Mobile nav toggle
@@ -487,7 +518,7 @@ window.initCheckout = function() {
   subtotalEl.textContent = `${subtotal.toFixed(2)} KM`;
   totalEl.textContent = `${(subtotal + shipping).toFixed(2)} KM`;
 
-  form.onsubmit = (e) => {
+  form.onsubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
     const orderData = {
@@ -504,10 +535,14 @@ window.initCheckout = function() {
       status: "Nova"
     };
 
-    // Save order to localStorage
-    const orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
-    orders.unshift(orderData);
-    localStorage.setItem("magnolia_orders", JSON.stringify(orders));
+    // Save order to Supabase
+    const { error } = await supabase.from("orders").insert([orderData]);
+
+    if (error) {
+      console.error("Error saving order:", error);
+      alert("Greška pri slanju narudžbe. Molimo pokušajte ponovo.");
+      return;
+    }
 
     // Clear cart
     cart = [];
