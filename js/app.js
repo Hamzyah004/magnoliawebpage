@@ -132,6 +132,12 @@ window.initAdminPanel = function() {
     };
   }
 
+  // Refresh button logic
+  const refreshBtn = document.querySelector(".card .btn--ghost");
+  if (refreshBtn && refreshBtn.textContent === "Osvježi") {
+    refreshBtn.onclick = () => window.refreshAdminDashboard();
+  }
+
   window.refreshAdminDashboard = function() {
     const ordersTable = document.getElementById("orders-table-body");
     if (!ordersTable) return;
@@ -176,39 +182,63 @@ window.initAdminPanel = function() {
           </span>
         </td>
         <td style="padding: 16px; text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
-          <button class="btn btn--ghost" style="padding: 4px 8px; font-size: 0.8rem;" onclick="viewOrder('${order.id}')">Detalji</button>
+          <button class="btn btn--ghost admin-action-btn" style="padding: 4px 8px; font-size: 0.8rem;" data-action="view" data-id="${order.id}">Detalji</button>
           ${order.status === "Nova" ? `
-            <button class="btn btn--primary" style="padding: 4px 8px; font-size: 0.8rem; background: #10b981;" onclick="markAsCompleted('${order.id}')">Završi</button>
+            <button class="btn btn--primary admin-action-btn" style="padding: 4px 8px; font-size: 0.8rem; background: #10b981;" data-action="complete" data-id="${order.id}">Završi</button>
           ` : ""}
-          <button class="btn btn--ghost" style="padding: 4px 8px; font-size: 0.8rem; color: #ef4444; border-color: #fecaca;" onclick="deleteOrder('${order.id}')">Obriši</button>
+          <button class="btn btn--ghost admin-action-btn" style="padding: 4px 8px; font-size: 0.8rem; color: #ef4444; border-color: #fecaca;" data-action="delete" data-id="${order.id}">Obriši</button>
         </td>
       </tr>
     `).join("");
   };
+
+  // Event delegation for admin actions (more reliable on Safari mobile)
+  const ordersTable = document.getElementById("orders-table-body");
+  if (ordersTable) {
+    ordersTable.onclick = (e) => {
+      const btn = e.target.closest(".admin-action-btn");
+      if (!btn) return;
+      
+      const action = btn.dataset.action;
+      const orderId = btn.dataset.id;
+      
+      if (action === "view") window.viewOrder(orderId);
+      if (action === "complete") window.markAsCompleted(orderId);
+      if (action === "delete") window.deleteOrder(orderId);
+    };
+  }
 
   window.refreshAdminDashboard();
 };
 
 // Global management functions
 window.markAsCompleted = function(orderId) {
-  if (!confirm("Da li ste sigurni da želite označiti ovu narudžbu kao završenu?")) return;
-  
-  const orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
-  const order = orders.find(o => o.id === orderId);
-  if (order) {
-    order.status = "Završena";
-    localStorage.setItem("magnolia_orders", JSON.stringify(orders));
-    window.refreshAdminDashboard();
-  }
+  setTimeout(() => {
+    if (!confirm("Da li ste sigurni da želite označiti ovu narudžbu kao završenu?")) return;
+    
+    const orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      order.status = "Završena";
+      localStorage.setItem("magnolia_orders", JSON.stringify(orders));
+      if (typeof window.refreshAdminDashboard === "function") {
+        window.refreshAdminDashboard();
+      }
+    }
+  }, 10);
 };
 
 window.deleteOrder = function(orderId) {
-  if (!confirm("Da li ste sigurni da želite obrisati ovu narudžbu?")) return;
-  
-  let orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
-  orders = orders.filter(o => o.id !== orderId);
-  localStorage.setItem("magnolia_orders", JSON.stringify(orders));
-  window.refreshAdminDashboard();
+  setTimeout(() => {
+    if (!confirm("Da li ste sigurni da želite obrisati ovu narudžbu?")) return;
+    
+    let orders = JSON.parse(localStorage.getItem("magnolia_orders") || "[]");
+    orders = orders.filter(o => o.id !== orderId);
+    localStorage.setItem("magnolia_orders", JSON.stringify(orders));
+    if (typeof window.refreshAdminDashboard === "function") {
+      window.refreshAdminDashboard();
+    }
+  }, 10);
 };
 
 // Global for onclick

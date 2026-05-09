@@ -2,12 +2,12 @@
   <div class="container">
     <h1 class="h1 grad-title" style="margin-bottom: 32px;">Potvrda narudžbe</h1>
 
-    <div class="grid" style="grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: start;">
+    <div class="checkout-grid">
       <!-- Customer Form -->
       <div class="card" style="padding: 32px; background: white; border: 1px solid var(--line); border-radius: var(--radius);">
         <h2 class="h2" style="margin-bottom: 24px;">Informacije za dostavu</h2>
         <form id="checkout-form">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="checkout-form-row">
             <div>
               <label class="muted" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">Ime</label>
               <input type="text" name="firstname" required style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px;">
@@ -33,7 +33,7 @@
             <input type="text" name="address" required style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px;">
           </div>
 
-          <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; margin-bottom: 24px;">
+          <div class="checkout-form-row checkout-form-row--city" style="margin-bottom: 24px;">
             <div>
               <label class="muted" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">Grad</label>
               <input type="text" name="city" required style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px;">
@@ -49,7 +49,7 @@
       </div>
 
       <!-- Order Summary -->
-      <div class="card" style="padding: 24px; background: var(--soft); border-radius: var(--radius); position: sticky; top: 100px;">
+      <div class="card card--sticky" style="padding: 24px; background: var(--soft); border-radius: var(--radius); position: sticky; top: 100px;">
         <h3 class="h2" style="margin-bottom: 20px;">Vaša narudžba</h3>
         <div id="checkout-items" style="margin-bottom: 24px;">
           <!-- Items will be injected here -->
