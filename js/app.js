@@ -571,7 +571,7 @@ window.initCheckout = function() {
     if (spinnerSvg) spinnerSvg.style.display = "block";
     if (spinnerNumber) {
       spinnerNumber.style.display = "flex";
-      spinnerNumber.textContent = "5";
+      spinnerNumber.textContent = "10";
     }
     if (infiniteSpinner) infiniteSpinner.style.display = "none";
     if (cancelArea) cancelArea.style.display = "block";
@@ -586,12 +586,13 @@ window.initCheckout = function() {
 
     if (modalTitle) modalTitle.textContent = "Slanje narudžbe u toku...";
     if (modalDesc) modalDesc.textContent = "Molimo vas za malo strpljenja dok pripremamo vašu narudžbu.";
-    if (timerText) timerText.textContent = "5s";
+    if (timerText) timerText.textContent = "10s";
 
     modal.classList.add("is-open");
     modal.style.display = "flex";
 
-    let secondsRemaining = 5;
+    const TOTAL_SECONDS = 10;
+    let secondsRemaining = TOTAL_SECONDS;
     let cancelled = false;
 
     const resetSubmitBtn = () => {
@@ -625,14 +626,14 @@ window.initCheckout = function() {
         if (timerText) timerText.textContent = `${secondsRemaining}s`;
         if (spinnerNumber) spinnerNumber.textContent = secondsRemaining;
         if (spinnerCircle) {
-          const offset = ((5 - secondsRemaining) / 5) * circumference;
+          const offset = ((TOTAL_SECONDS - secondsRemaining) / TOTAL_SECONDS) * circumference;
           spinnerCircle.style.strokeDashoffset = offset.toString();
         }
       } else {
         clearInterval(countdownTimer);
         if (spinnerCircle) spinnerCircle.style.strokeDashoffset = circumference.toString();
 
-        // 5s elapsed without cancellation - now submit to database
+        // 10s elapsed without cancellation - now submit to database
         if (cancelArea) cancelArea.style.display = "none";
         if (spinnerSvg) spinnerSvg.style.display = "none";
         if (spinnerNumber) spinnerNumber.style.display = "none";
