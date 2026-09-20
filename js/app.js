@@ -359,11 +359,11 @@ function updateCartUI() {
     `;
   }).join("");
 
-  const shippingKM = subtotalKM >= 99 ? 0 : 11.00;
+  const shippingKM = cart.length === 0 ? 0 : 11.00;
   const totalKM = subtotalKM + shippingKM;
 
   cartSubtotalEl.textContent = `${subtotalKM.toFixed(2)} KM`;
-  cartShippingEl.textContent = shippingKM === 0 ? "BESPLATNO" : `${shippingKM.toFixed(2)} KM`;
+  cartShippingEl.textContent = `${shippingKM.toFixed(2)} KM`;
   cartTotalEl.textContent = `${totalKM.toFixed(2)} KM`;
 }
 
@@ -408,16 +408,12 @@ window.addToCart = function(product, btn) {
     }, 2000);
   }
 
-  // Show toast confirmation (only if it's NOT the first item)
-  if (!wasEmpty) {
-    window.showToast("Proizvod dodan u korpu");
-  }
+  // Show toast confirmation
+  window.showToast("Proizvod dodan u korpu");
 
   // Open cart drawer automatically ONLY for the very first item added
   if (wasEmpty) {
     document.getElementById("cart-drawer").classList.add("is-open");
-    // Show shipping modal
-    document.getElementById("shipping-modal").classList.add("is-open");
   }
 };
 
@@ -478,13 +474,6 @@ function initCart() {
     window.addToCart(product, btn);
   });
 
-  // Handle shipping modal close buttons
-  document.querySelectorAll("#shipping-modal [data-modal-close]").forEach(btn => {
-    btn.onclick = () => {
-      document.getElementById("shipping-modal").classList.remove("is-open");
-    };
-  });
-
   updateCartUI();
 }
 
@@ -494,6 +483,7 @@ initCart();
 window.initCheckout = function() {
   const itemsEl = document.getElementById("checkout-items");
   const subtotalEl = document.getElementById("checkout-subtotal");
+  const shippingEl = document.getElementById("checkout-shipping");
   const totalEl = document.getElementById("checkout-total");
   const form = document.getElementById("checkout-form");
 
@@ -514,12 +504,31 @@ window.initCheckout = function() {
     `;
   }).join("");
 
-  const shipping = subtotal >= 99 ? 0 : 11;
+  const shipping = 11.00;
+  if (shippingEl) shippingEl.textContent = `${shipping.toFixed(2)} KM`;
   subtotalEl.textContent = `${subtotal.toFixed(2)} KM`;
   totalEl.textContent = `${(subtotal + shipping).toFixed(2)} KM`;
 
-  form.onsubmit = async (e) => {
+  let isSubmitting = false;
+  let countdownTimer = null;
+
+  form.onsubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]') || document.getElementById("checkout-submit-btn");
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.7";
+      submitBtn.style.cursor = "not-allowed";
+    }
+    isSubmitting = true;
+
     const formData = new FormData(form);
     const orderData = {
       id: "ORD-" + Date.now().toString().slice(-6),
@@ -528,28 +537,187 @@ window.initCheckout = function() {
       email: formData.get("email"),
       phone: formData.get("phone"),
       address: `${formData.get("address")}, ${formData.get("city")} ${formData.get("zip")}`,
-      items: cart,
+      items: [...cart],
       subtotal: subtotal.toFixed(2),
       shipping: shipping.toFixed(2),
       total: (subtotal + shipping).toFixed(2),
       status: "Nova"
     };
 
-    // Save order to Supabase
-    const { error } = await supabase.from("orders").insert([orderData]);
+    const modal = document.getElementById("order-status-modal");
+    const loadingView = document.getElementById("order-modal-loading");
+    const successView = document.getElementById("order-modal-success");
+    const errorView = document.getElementById("order-modal-error");
+    const spinnerSvg = modal?.querySelector(".order-spinner-svg");
+    const spinnerCircle = document.getElementById("order-spinner-circle");
+    const spinnerNumber = document.getElementById("order-spinner-number");
+    const infiniteSpinner = document.getElementById("order-spinner-infinite");
+    const modalTitle = document.getElementById("order-modal-title");
+    const modalDesc = document.getElementById("order-modal-desc");
+    const cancelArea = document.getElementById("order-cancel-area");
+    const cancelBtn = document.getElementById("order-cancel-btn");
+    const timerText = document.getElementById("order-cancel-timer-text");
 
-    if (error) {
-      console.error("Error saving order:", error);
-      alert("Greška pri slanju narudžbe. Molimo pokušajte ponovo.");
+    if (!modal) {
+      isSubmitting = false;
       return;
     }
 
-    // Clear cart
-    cart = [];
-    saveCart();
+    // Reset views & states
+    loadingView.style.display = "block";
+    successView.style.display = "none";
+    errorView.style.display = "none";
 
-    alert("Hvala vam! Vaša narudžba je uspješno primljena.");
-    navigateTo("/");
+    if (spinnerSvg) spinnerSvg.style.display = "block";
+    if (spinnerNumber) {
+      spinnerNumber.style.display = "flex";
+      spinnerNumber.textContent = "5";
+    }
+    if (infiniteSpinner) infiniteSpinner.style.display = "none";
+    if (cancelArea) cancelArea.style.display = "block";
+
+    const circumference = 238.76;
+    if (spinnerCircle) {
+      spinnerCircle.style.transition = "none";
+      spinnerCircle.style.strokeDashoffset = "0";
+      void spinnerCircle.offsetWidth; // Trigger reflow
+      spinnerCircle.style.transition = "stroke-dashoffset 1s linear";
+    }
+
+    if (modalTitle) modalTitle.textContent = "Slanje narudžbe u toku...";
+    if (modalDesc) modalDesc.textContent = "Molimo vas za malo strpljenja dok pripremamo vašu narudžbu.";
+    if (timerText) timerText.textContent = "5s";
+
+    modal.classList.add("is-open");
+    modal.style.display = "flex";
+
+    let secondsRemaining = 5;
+    let cancelled = false;
+
+    const resetSubmitBtn = () => {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "1";
+        submitBtn.style.cursor = "pointer";
+      }
+      isSubmitting = false;
+    };
+
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        cancelled = true;
+        if (countdownTimer) clearInterval(countdownTimer);
+        modal.classList.remove("is-open");
+        modal.style.display = "none";
+        resetSubmitBtn();
+        window.showToast("Slanje narudžbe je poništeno.");
+      };
+    }
+
+    countdownTimer = setInterval(async () => {
+      if (cancelled) {
+        clearInterval(countdownTimer);
+        return;
+      }
+
+      secondsRemaining--;
+      if (secondsRemaining > 0) {
+        if (timerText) timerText.textContent = `${secondsRemaining}s`;
+        if (spinnerNumber) spinnerNumber.textContent = secondsRemaining;
+        if (spinnerCircle) {
+          const offset = ((5 - secondsRemaining) / 5) * circumference;
+          spinnerCircle.style.strokeDashoffset = offset.toString();
+        }
+      } else {
+        clearInterval(countdownTimer);
+        if (spinnerCircle) spinnerCircle.style.strokeDashoffset = circumference.toString();
+
+        // 5s elapsed without cancellation - now submit to database
+        if (cancelArea) cancelArea.style.display = "none";
+        if (spinnerSvg) spinnerSvg.style.display = "none";
+        if (spinnerNumber) spinnerNumber.style.display = "none";
+        if (infiniteSpinner) infiniteSpinner.style.display = "block";
+        if (modalTitle) modalTitle.textContent = "Spremanje narudžbe u sistem...";
+        if (modalDesc) modalDesc.textContent = "Još samo trenutak, evidentiramo vašu narudžbu...";
+
+        try {
+          const { error } = await supabase.from("orders").insert([orderData]);
+
+          if (error) throw error;
+
+          // SUCCESS STATE
+          loadingView.style.display = "none";
+          successView.style.display = "block";
+
+          const detailsEl = document.getElementById("order-success-details");
+          if (detailsEl) {
+            detailsEl.innerHTML = `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span class="muted">Broj narudžbe:</span>
+                <strong style="color: var(--navy);">${orderData.id}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span class="muted">Kupac:</span>
+                <strong>${orderData.customer}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span class="muted">Telefon:</span>
+                <strong>${orderData.phone}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span class="muted">Adresa za dostavu:</span>
+                <strong>${orderData.address}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 1.05rem;">
+                <span style="font-weight: 700; color: var(--navy);">Ukupno za platiti:</span>
+                <strong style="color: var(--gold); font-size: 1.15rem;">${orderData.total} KM</strong>
+              </div>
+              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--muted); text-align: center; background: rgba(11,27,58,0.04); padding: 6px; border-radius: 8px;">
+                Plaćanje pouzećem (gotovinom prilikom preuzimanja pošiljke)
+              </div>
+            `;
+          }
+
+          // Clear cart
+          cart = [];
+          saveCart();
+
+          const successDoneBtn = document.getElementById("order-success-close-btn");
+          if (successDoneBtn) {
+            successDoneBtn.onclick = () => {
+              modal.classList.remove("is-open");
+              modal.style.display = "none";
+              resetSubmitBtn();
+              navigateTo("/");
+            };
+          }
+        } catch (err) {
+          console.error("Greška pri slanju narudžbe:", err);
+          loadingView.style.display = "none";
+          errorView.style.display = "block";
+
+          const retryBtn = document.getElementById("order-error-retry-btn");
+          const closeErrBtn = document.getElementById("order-error-close-btn");
+
+          if (retryBtn) {
+            retryBtn.onclick = () => {
+              modal.classList.remove("is-open");
+              modal.style.display = "none";
+              resetSubmitBtn();
+              if (submitBtn) submitBtn.click();
+            };
+          }
+
+          if (closeErrBtn) {
+            closeErrBtn.onclick = () => {
+              modal.classList.remove("is-open");
+              modal.style.display = "none";
+              resetSubmitBtn();
+            };
+          }
+        }
+      }
+    }, 1000);
   };
 };
 

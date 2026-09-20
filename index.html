@@ -73,19 +73,81 @@
     </div>
   </div>
 
-  <!-- Shipping Info Modal -->
-  <div class="modal" id="shipping-modal" aria-hidden="true">
-    <div class="modal__overlay" data-modal-close></div>
-    <div class="modal__dialog modal__dialog--small" role="dialog" aria-modal="true">
-      <button class="modal__close" type="button" aria-label="Zatvori" data-modal-close>×</button>
-      <div class="modal__text" style="text-align: center; padding: 40px 20px;">
-        <div style="background: var(--soft); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+  <!-- Order Status & Confirmation Modal -->
+  <div class="modal" id="order-status-modal" aria-hidden="true" style="display:none;">
+    <div class="modal__overlay"></div>
+    <div class="modal__dialog modal__dialog--small" role="dialog" aria-modal="true" style="max-width: 440px; border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 25px 60px rgba(11, 27, 58, 0.25); border: 1px solid var(--line);">
+      
+      <!-- Phase 1: Loading & Countdown / Cancel State -->
+      <div id="order-modal-loading" class="modal__text" style="text-align: center; padding: 40px 24px;">
+        <div class="order-spinner-wrap" style="position: relative; width: 88px; height: 88px; margin: 0 auto 20px;">
+          <svg class="order-spinner-svg" width="88" height="88" viewBox="0 0 88 88" style="transform: rotate(-90deg);">
+            <circle cx="44" cy="44" r="38" stroke="rgba(11, 27, 58, 0.08)" stroke-width="5" fill="none" />
+            <circle id="order-spinner-circle" cx="44" cy="44" r="38" stroke="var(--gold)" stroke-width="5" stroke-linecap="round" fill="none" stroke-dasharray="238.76" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear;" />
+          </svg>
+          <div id="order-spinner-number" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800; color: var(--navy);">5</div>
+          <div id="order-spinner-infinite" class="order-infinite-spinner" style="display: none; position: absolute; inset: 0; border: 4px solid rgba(201, 162, 74, 0.2); border-top-color: var(--gold); border-radius: 50%;"></div>
         </div>
-        <h2 class="h2">Besplatna dostava!</h2>
-        <p class="lead" style="margin: 0 auto;">Podsjećamo vas da za sve narudžbe iznad <strong>99 KM</strong> ostvarujete pravo na besplatnu dostavu.</p>
-        <button class="btn btn--primary" data-modal-close style="margin-top: 24px; min-width: 140px;">U redu</button>
+
+        <h2 id="order-modal-title" class="h2" style="font-size: 1.35rem; margin-bottom: 8px; color: var(--navy);">Slanje narudžbe u toku...</h2>
+        <p id="order-modal-desc" class="lead" style="font-size: 0.95rem; margin: 0 auto 20px; color: var(--muted); line-height: 1.5;">
+          Molimo vas za malo strpljenja dok pripremamo vašu narudžbu.
+        </p>
+
+        <div id="order-cancel-area">
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+            Možete poništiti slanje još <strong id="order-cancel-timer-text" style="color: var(--navy);">5s</strong>:
+          </p>
+          <button id="order-cancel-btn" type="button" class="btn btn--ghost" style="width: 100%; color: #ef4444; border-color: #fecaca; padding: 12px; font-size: 0.95rem;">
+            Poništi slanje narudžbe
+          </button>
+        </div>
       </div>
+
+      <!-- Phase 2: Success State -->
+      <div id="order-modal-success" class="modal__text" style="display: none; text-align: center; padding: 40px 24px;">
+        <div style="background: rgba(16, 185, 129, 0.12); width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #10b981;">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+
+        <h2 class="h2" style="font-size: 1.4rem; margin-bottom: 8px; color: var(--navy);">Narudžba je primljena!</h2>
+        <p class="lead" style="font-size: 0.95rem; margin: 0 auto 20px; color: var(--muted);">
+          Hvala vam na ukazanom povjerenju. Vaša narudžba je uspješno zabilježena i poslana na obradu.
+        </p>
+
+        <div id="order-success-details" style="background: var(--soft); border-radius: 14px; padding: 16px; text-align: left; margin-bottom: 24px; font-size: 0.9rem; border: 1px solid var(--line);">
+        </div>
+
+        <button id="order-success-close-btn" type="button" class="btn btn--primary" style="width: 100%; padding: 14px; font-size: 1rem;">
+          Nastavi sa kupovinom
+        </button>
+      </div>
+
+      <!-- Phase 3: Error State -->
+      <div id="order-modal-error" class="modal__text" style="display: none; text-align: center; padding: 40px 24px;">
+        <div style="background: rgba(239, 68, 68, 0.12); width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #ef4444;">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+
+        <h2 class="h2" style="font-size: 1.35rem; margin-bottom: 8px; color: var(--navy);">Greška pri slanju narudžbe</h2>
+        <p class="lead" style="font-size: 0.95rem; margin: 0 auto 20px; color: var(--muted);">
+          Došlo je do greške prilikom povezivanja sa serverom. Vaša korpa i uneseni podaci su sačuvani.
+        </p>
+
+        <button id="order-error-retry-btn" type="button" class="btn btn--primary" style="width: 100%; padding: 12px; margin-bottom: 10px;">
+          Pokušaj ponovo
+        </button>
+        <button id="order-error-close-btn" type="button" class="btn btn--ghost" style="width: 100%; padding: 10px;">
+          Zatvori
+        </button>
+      </div>
+
     </div>
   </div>
 
