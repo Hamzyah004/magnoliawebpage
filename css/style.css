@@ -1057,28 +1057,31 @@ img{ max-width:100%; display:block; }
 
   opacity: 0;
   pointer-events: none;
-  transform: translateY(12px);
+  --scroll-y: 12px;
+  --scroll-scale: 0.88;
+  transform: translate3d(0, var(--scroll-y), 0) scale(var(--scroll-scale));
 
-  transition: all .25s ease;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, background 0.2s ease;
+  will-change: transform, opacity;
   z-index: 1000;
-
-  
 }
 
 #scrollTopBtn.show{
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+  --scroll-y: 0px;
+  --scroll-scale: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
   #scrollTopBtn:hover{
-    transform: translateY(-4px) scale(1.08);
+    --scroll-y: -4px;
+    --scroll-scale: 1.08;
     background: #07142d;
   }
 }
 #scrollTopBtn:active{
-  transform: scale(0.95);
+  --scroll-scale: 0.95;
   background: #07142d;
 }
 
@@ -1099,7 +1102,11 @@ img{ max-width:100%; display:block; }
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+  --cart-y: 0px;
+  --cart-scale: 1;
+  transform: translate3d(0, var(--cart-y), 0) scale(var(--cart-scale));
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, opacity 0.3s ease;
+  will-change: transform;
 }
 
 .cart-drawer.is-open ~ .cart-toggle,
@@ -1110,17 +1117,17 @@ img{ max-width:100%; display:block; }
 }
 
 .cart-toggle.is-raised {
-  bottom: 100px;
+  --cart-y: -72px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .cart-toggle:hover {
-    transform: scale(1.1);
+    --cart-scale: 1.08;
     background: var(--gold);
   }
 }
 .cart-toggle:active {
-  transform: scale(0.95);
+  --cart-scale: 0.95;
   background: var(--gold);
 }
 

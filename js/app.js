@@ -19,11 +19,7 @@ document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("gesturechange", (e) => e.preventDefault());
 document.addEventListener("gestureend", (e) => e.preventDefault());
 
-document.addEventListener("touchstart", (e) => {
-  if (e.touches.length > 1) {
-    e.preventDefault();
-  }
-}, { passive: false });
+document.addEventListener("touchstart", () => {}, { passive: true });
 
 // Ukloni sticky hover/focus efekte na mobilnim uređajima nakon dodira
 document.addEventListener("touchend", (e) => {
@@ -920,15 +916,28 @@ initProductModal();
 const scrollBtn = document.getElementById("scrollTopBtn");
 const cartToggle = document.getElementById("cart-toggle");
 
+let isScrolledPast = false;
+let scrollTicking = false;
+
 window.addEventListener("scroll", () => {
-  if (window.scrollY > 300) {
-    scrollBtn.classList.add("show");
-    cartToggle?.classList.add("is-raised");
-  } else {
-    scrollBtn.classList.remove("show");
-    cartToggle?.classList.remove("is-raised");
+  if (!scrollTicking) {
+    window.requestAnimationFrame(() => {
+      const pastThreshold = window.scrollY > 280;
+      if (pastThreshold !== isScrolledPast) {
+        isScrolledPast = pastThreshold;
+        if (pastThreshold) {
+          scrollBtn?.classList.add("show");
+          cartToggle?.classList.add("is-raised");
+        } else {
+          scrollBtn?.classList.remove("show");
+          cartToggle?.classList.remove("is-raised");
+        }
+      }
+      scrollTicking = false;
+    });
+    scrollTicking = true;
   }
-});
+}, { passive: true });
 
 scrollBtn.addEventListener("click", () => {
   window.scrollTo({
