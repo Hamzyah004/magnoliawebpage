@@ -16,12 +16,22 @@
 }
 
 *{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; }
+html,body{ 
+  margin:0; 
+  padding:0; 
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
 body{
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   color: var(--ink);
   background: var(--bg);
   line-height: 1.5;
+}
+
+/* Prevent auto-zoom on mobile inputs */
+input, textarea, select {
+  font-size: 16px;
 }
 
 a{ color: inherit; text-decoration:none; }

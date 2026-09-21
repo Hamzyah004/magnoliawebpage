@@ -14,6 +14,17 @@ if (window.location.pathname.endsWith("/index.html")) {
 
 document.getElementById("y").textContent = new Date().getFullYear();
 
+// Onemogući zoom na mobilnim uređajima (iOS pinch i multi-touch)
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+document.addEventListener("gesturechange", (e) => e.preventDefault());
+document.addEventListener("gestureend", (e) => e.preventDefault());
+
+document.addEventListener("touchstart", (e) => {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
 // Intercept link clicks (data-link)
 document.addEventListener("click", (e) => {
   const a = e.target.closest("a[data-link]");
