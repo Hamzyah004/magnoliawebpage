@@ -431,6 +431,9 @@ window.addToCart = function(product, btn) {
 window.removeFromCart = function(index) {
   cart.splice(index, 1);
   saveCart();
+  if (cart.length === 0) {
+    document.getElementById("cart-drawer")?.classList.remove("is-open");
+  }
 };
 
 window.updateQty = function(index, delta) {
@@ -439,6 +442,9 @@ window.updateQty = function(index, delta) {
     cart.splice(index, 1);
   }
   saveCart();
+  if (cart.length === 0) {
+    document.getElementById("cart-drawer")?.classList.remove("is-open");
+  }
 };
 
 function initCart() {
