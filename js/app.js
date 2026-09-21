@@ -424,7 +424,28 @@ window.addToCart = function(product, btn) {
 
   // Open cart drawer automatically ONLY for the very first item added
   if (wasEmpty) {
-    document.getElementById("cart-drawer").classList.add("is-open");
+    window.openCart();
+  }
+};
+
+window.openCart = function() {
+  const drawer = document.getElementById("cart-drawer");
+  if (!drawer) return;
+  drawer.classList.add("is-open");
+  drawer.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+};
+
+window.closeCart = function() {
+  const drawer = document.getElementById("cart-drawer");
+  if (!drawer) return;
+  drawer.classList.remove("is-open");
+  drawer.setAttribute("aria-hidden", "true");
+  const isAnyModalOpen = document.querySelector(".modal.is-open");
+  if (!isAnyModalOpen) {
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
   }
 };
 
@@ -432,7 +453,7 @@ window.removeFromCart = function(index) {
   cart.splice(index, 1);
   saveCart();
   if (cart.length === 0) {
-    document.getElementById("cart-drawer")?.classList.remove("is-open");
+    window.closeCart();
   }
 };
 
@@ -443,7 +464,7 @@ window.updateQty = function(index, delta) {
   }
   saveCart();
   if (cart.length === 0) {
-    document.getElementById("cart-drawer")?.classList.remove("is-open");
+    window.closeCart();
   }
 };
 
@@ -453,12 +474,12 @@ function initCart() {
   const closeBtns = document.querySelectorAll("[data-cart-close]");
 
   toggle?.addEventListener("click", () => {
-    drawer.classList.add("is-open");
+    window.openCart();
   });
 
   closeBtns.forEach(btn => {
     btn.addEventListener("click", () => {
-      drawer.classList.remove("is-open");
+      window.closeCart();
     });
   });
 
@@ -468,9 +489,14 @@ function initCart() {
       alert("Korpa je prazna!");
       return;
     }
-    drawer.classList.remove("is-open");
+    window.closeCart();
     navigateTo("/checkout");
   });
+
+  // Prevent background touch scrolling on drawer overlay
+  drawer?.querySelector(".cart-drawer__overlay")?.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+  }, { passive: false });
 
   // Handle "Add to Cart" clicks on product cards (event delegation)
   document.addEventListener("click", (e) => {
