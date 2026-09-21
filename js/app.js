@@ -25,6 +25,23 @@ document.addEventListener("touchstart", (e) => {
   }
 }, { passive: false });
 
+// Ukloni sticky hover/focus efekte na mobilnim uređajima nakon dodira
+document.addEventListener("touchend", (e) => {
+  const interactive = e.target.closest("button, a, .btn, .btn-add-cart, .cart-toggle");
+  if (interactive) {
+    setTimeout(() => {
+      interactive.blur();
+    }, 100);
+  }
+}, { passive: true });
+
+document.addEventListener("touchcancel", (e) => {
+  const interactive = e.target.closest("button, a, .btn, .btn-add-cart, .cart-toggle");
+  if (interactive) {
+    interactive.blur();
+  }
+}, { passive: true });
+
 // Intercept link clicks (data-link)
 document.addEventListener("click", (e) => {
   const a = e.target.closest("a[data-link]");
