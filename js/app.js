@@ -1563,6 +1563,8 @@ window.initFavoritesPage = function() {
   const gridEl = document.getElementById("favorites-grid");
   const countBadge = document.getElementById("favorites-count-badge");
   const countNum = document.getElementById("favorites-count-num");
+  const actionsEl = document.getElementById("favorites-actions");
+  const addAllBtn = document.getElementById("btn-add-all-favs");
 
   if (!loadingEl) return;
 
@@ -1573,6 +1575,7 @@ window.initFavoritesPage = function() {
     if (emptyEl) emptyEl.style.display = "none";
     if (gridEl) gridEl.style.display = "none";
     if (countBadge) countBadge.style.display = "none";
+    if (actionsEl) actionsEl.style.display = "none";
     return;
   }
 
@@ -1584,11 +1587,13 @@ window.initFavoritesPage = function() {
     if (emptyEl) emptyEl.style.display = "block";
     if (gridEl) gridEl.style.display = "none";
     if (countBadge) countBadge.style.display = "none";
+    if (actionsEl) actionsEl.style.display = "none";
     return;
   }
 
   // 3. Has favorites
   if (emptyEl) emptyEl.style.display = "none";
+  if (actionsEl) actionsEl.style.display = "block";
   if (countBadge) {
     countBadge.style.display = "inline-block";
     if (countNum) countNum.textContent = userFavorites.length;
@@ -1643,6 +1648,47 @@ window.initFavoritesPage = function() {
       }
     };
   });
+
+  // Dodaj sve u korpu akcija
+  if (addAllBtn) {
+    addAllBtn.onclick = () => {
+      if (favProducts.length === 0) return;
+
+      favProducts.forEach((p) => {
+        const existing = cart.find((item) => item.name === p.title);
+        if (existing) {
+          existing.qty += 1;
+        } else {
+          cart.push({
+            name: p.title,
+            price: p.price,
+            img: p.img,
+            qty: 1
+          });
+        }
+      });
+
+      saveCart();
+
+      // Vizuelni feedback na dugmetu
+      const originalHTML = addAllBtn.innerHTML;
+      addAllBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Dodano u korpu!</span>
+      `;
+      addAllBtn.style.background = "#10b981";
+      addAllBtn.style.borderColor = "#10b981";
+
+      setTimeout(() => {
+        addAllBtn.innerHTML = originalHTML;
+        addAllBtn.style.background = "";
+        addAllBtn.style.borderColor = "";
+      }, 2000);
+
+      window.showToast("Svi omiljeni proizvodi dodani u korpu! 🛒");
+      window.openCart();
+    };
+  }
 };
 
 if (!window.location.hash) window.location.hash = "#/";
