@@ -29,9 +29,11 @@ function updateAuthNavbar() {
     }
     if (loginLink) loginLink.style.display = "none";
     if (logoutBtn) {
-      logoutBtn.style.display = "inline-block";
-      const name = currentUser.user_metadata?.first_name || currentUser.email?.split("@")[0] || "Korisnik";
-      logoutBtn.textContent = `Odjavi se (${name})`;
+      logoutBtn.style.display = "inline-flex";
+      logoutBtn.classList.add("nav__cta");
+      const rawName = currentUser.user_metadata?.first_name || currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Korisnik";
+      const firstName = rawName.trim().split(" ")[0];
+      logoutBtn.textContent = `Odjavi se (${firstName})`;
     }
   } else {
     if (favLink) favLink.style.display = "none";
