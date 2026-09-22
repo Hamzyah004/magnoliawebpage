@@ -44,6 +44,14 @@
               <input type="text" name="zip" required style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px;">
             </div>
           </div>
+
+          <!-- Save details for future orders (Only for logged in users) -->
+          <div id="checkout-save-info-wrap" style="display: none; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95rem; color: var(--navy); font-weight: 500; user-select: none;">
+              <input type="checkbox" id="checkout-save-info" name="save_info" style="width: 18px; height: 18px; accent-color: var(--navy); cursor: pointer;">
+              <span>Sačuvaj podatke za buduće narudžbe</span>
+            </label>
+          </div>
         </div>
 
         <!-- Order Summary -->

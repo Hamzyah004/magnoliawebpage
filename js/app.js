@@ -763,18 +763,46 @@ window.initCheckout = function() {
   subtotalEl.textContent = `${subtotal.toFixed(2)} KM`;
   totalEl.textContent = `${(subtotal + shipping).toFixed(2)} KM`;
 
+  // Checkbox za čuvanje podataka (samo za prijavljene korisnike)
+  const saveWrap = document.getElementById("checkout-save-info-wrap");
+  const saveCheckbox = document.getElementById("checkout-save-info");
+
   // Auto-fill logged-in customer info if available
   if (currentUser && form) {
+    if (saveWrap) saveWrap.style.display = "block";
+    if (saveCheckbox) saveCheckbox.checked = true;
+
     const meta = currentUser.user_metadata || {};
-    if (form.elements["firstname"] && !form.elements["firstname"].value && meta.first_name) {
-      form.elements["firstname"].value = meta.first_name;
+    let localSaved = {};
+    try {
+      localSaved = JSON.parse(localStorage.getItem("magnolia_shipping_" + currentUser.id) || "{}");
+    } catch (e) {}
+
+    const getVal = (key) => meta[key] || localSaved[key] || "";
+
+    if (form.elements["firstname"] && !form.elements["firstname"].value) {
+      form.elements["firstname"].value = getVal("first_name");
     }
-    if (form.elements["lastname"] && !form.elements["lastname"].value && meta.last_name) {
-      form.elements["lastname"].value = meta.last_name;
+    if (form.elements["lastname"] && !form.elements["lastname"].value) {
+      form.elements["lastname"].value = getVal("last_name");
     }
-    if (form.elements["email"] && !form.elements["email"].value && currentUser.email) {
-      form.elements["email"].value = currentUser.email;
+    if (form.elements["email"] && !form.elements["email"].value) {
+      form.elements["email"].value = currentUser.email || getVal("email");
     }
+    if (form.elements["phone"] && !form.elements["phone"].value) {
+      form.elements["phone"].value = getVal("phone");
+    }
+    if (form.elements["address"] && !form.elements["address"].value) {
+      form.elements["address"].value = getVal("address");
+    }
+    if (form.elements["city"] && !form.elements["city"].value) {
+      form.elements["city"].value = getVal("city");
+    }
+    if (form.elements["zip"] && !form.elements["zip"].value) {
+      form.elements["zip"].value = getVal("zip");
+    }
+  } else {
+    if (saveWrap) saveWrap.style.display = "none";
   }
 
   let isSubmitting = false;
@@ -888,6 +916,35 @@ window.initCheckout = function() {
           const { error } = await supabase.from("orders").insert([orderData]);
 
           if (error) throw error;
+
+          // Ako je prijavljeni korisnik i označio je 'Sačuvaj podatke za buduće narudžbe'
+          if (currentUser && saveCheckbox && saveCheckbox.checked) {
+            const updatedShipping = {
+              first_name: formData.get("firstname") || currentUser.user_metadata?.first_name || "",
+              last_name: formData.get("lastname") || currentUser.user_metadata?.last_name || "",
+              phone: formData.get("phone") || "",
+              address: formData.get("address") || "",
+              city: formData.get("city") || "",
+              zip: formData.get("zip") || "",
+              save_shipping_info: true
+            };
+
+            try {
+              localStorage.setItem("magnolia_shipping_" + currentUser.id, JSON.stringify(updatedShipping));
+            } catch (e) {}
+
+            try {
+              await supabase.auth.updateUser({
+                data: updatedShipping
+              });
+              currentUser.user_metadata = {
+                ...currentUser.user_metadata,
+                ...updatedShipping
+              };
+            } catch (userUpErr) {
+              console.warn("Greška pri ažuriranju korisničkih podataka za dostavu:", userUpErr);
+            }
+          }
 
           // SUCCESS STATE
           loadingView.style.display = "none";
