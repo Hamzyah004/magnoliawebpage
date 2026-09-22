@@ -1,0 +1,56 @@
+<section class="section">
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+      <div>
+        <span class="kicker">Vaš kutak</span>
+        <h1 class="h1">Moji omiljeni proizvodi</h1>
+        <p class="lead" style="margin: 0;">Svi proizvodi koje ste označili srcem na jednom mjestu.</p>
+      </div>
+      <div id="favorites-count-badge" style="display: none; background: rgba(201, 162, 74, 0.14); border: 1px solid rgba(201, 162, 74, 0.25); color: var(--navy); font-weight: 700; padding: 6px 14px; border-radius: 999px; font-size: 0.9rem;">
+        <span id="favorites-count-num">0</span> proizvoda
+      </div>
+    </div>
+
+    <!-- STATE 1: LOADING -->
+    <div id="favorites-loading" style="text-align: center; padding: 60px 20px;">
+      <div class="order-infinite-spinner" style="width: 56px; height: 56px; margin: 0 auto 16px;"></div>
+      <p class="muted">Učitavanje vaših omiljenih proizvoda...</p>
+    </div>
+
+    <!-- STATE 2: NOT LOGGED IN -->
+    <div id="favorites-not-logged-in" style="display: none; text-align: center; padding: 64px 20px; background: #ffffff; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); max-width: 500px; margin: 20px auto;">
+      <div style="background: rgba(239, 68, 68, 0.1); width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #ef4444;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </div>
+      <h2 class="h2" style="font-size: 1.35rem; margin-bottom: 8px; color: var(--navy);">Prijavite se za pregled omiljenih</h2>
+      <p class="muted" style="font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">
+        Kako biste sačuvali proizvode i imali pristup svojoj listi želja na svim uređajima, molimo vas da se prijavite na vaš račun.
+      </p>
+      <a href="#/prijava" data-link class="btn btn--primary" style="padding: 12px 28px; font-size: 1rem;">
+        Prijavi se ili Registruj
+      </a>
+    </div>
+
+    <!-- STATE 3: EMPTY (Logged in, but 0 favorites) -->
+    <div id="favorites-empty" style="display: none; text-align: center; padding: 64px 20px; background: #ffffff; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); max-width: 520px; margin: 20px auto;">
+      <div style="background: rgba(201, 162, 74, 0.12); width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: var(--gold);">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </div>
+      <h2 class="h2" style="font-size: 1.35rem; margin-bottom: 8px; color: var(--navy);">Nemate omiljenih proizvoda</h2>
+      <p class="muted" style="font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">
+        Još uvijek niste označili nijedan proizvod. Pregledajte našu ponudu prirodne kozmetike i kliknite na srce na proizvodima koje želite sačuvati.
+      </p>
+      <a href="#/proizvodi" data-link class="btn btn--primary" style="padding: 12px 28px; font-size: 1rem;">
+        Istraži proizvode
+      </a>
+    </div>
+
+    <!-- STATE 4: PRODUCT GRID -->
+    <div id="favorites-grid" class="grid products-grid" style="display: none;"></div>
+
+  </div>
+</section>

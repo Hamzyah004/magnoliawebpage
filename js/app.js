@@ -1,8 +1,204 @@
 import { router, navigateTo } from "./router.js";
+import { PRODUCTS } from "./products-data.js";
 
 const SUPABASE_URL = "https://rmjtrveqslcklvprikfo.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtanRydmVxc2xja2x2cHJpa2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTY2NjQsImV4cCI6MjA5Mzg5MjY2NH0.7JKU0NgvTTw7pSAQ35GsT6Ka_UNUnN4xoc2aO0awpxU";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// --- CUSTOMER AUTH & FAVORITES STATE ---
+let currentUser = null;
+let userFavorites = [];
+
+// Proveri da li je proizvod u omiljenim
+window.isFavorite = function(title) {
+  return userFavorites.includes(title);
+};
+
+// Ažuriranje elemenata u navigaciji u zavisnosti od prijave
+function updateAuthNavbar() {
+  const favLink = document.getElementById("nav-favorites-link");
+  const favCount = document.getElementById("nav-favorites-count");
+  const loginLink = document.getElementById("nav-login-link");
+  const logoutBtn = document.getElementById("nav-logout-btn");
+
+  if (currentUser) {
+    if (favLink) favLink.style.display = "inline-flex";
+    if (favCount) {
+      favCount.textContent = userFavorites.length;
+      favCount.style.display = userFavorites.length > 0 ? "inline-block" : "none";
+    }
+    if (loginLink) loginLink.style.display = "none";
+    if (logoutBtn) {
+      logoutBtn.style.display = "inline-block";
+      const name = currentUser.user_metadata?.first_name || currentUser.email?.split("@")[0] || "Korisnik";
+      logoutBtn.textContent = `Odjavi se (${name})`;
+    }
+  } else {
+    if (favLink) favLink.style.display = "none";
+    if (loginLink) loginLink.style.display = "inline-block";
+    if (logoutBtn) logoutBtn.style.display = "none";
+  }
+}
+
+// Spasavanje omiljenih u cache i Supabase
+async function saveUserFavorites() {
+  if (!currentUser) return;
+  localStorage.setItem("magnolia_favs_" + currentUser.id, JSON.stringify(userFavorites));
+  try {
+    await supabase.auth.updateUser({
+      data: { favorites: userFavorites }
+    });
+  } catch (err) {
+    console.warn("Greška pri ažuriranju omiljenih na Supabase:", err);
+  }
+}
+
+// Dodavanje / uklanjanje iz omiljenih
+window.toggleFavorite = async function(title) {
+  if (!currentUser) {
+    window.showToast("Prijavite se kako biste dodali u omiljeno. ❤️");
+    return;
+  }
+
+  const idx = userFavorites.indexOf(title);
+  if (idx > -1) {
+    userFavorites.splice(idx, 1);
+    window.showToast("Proizvod uklonjen iz omiljenih.");
+  } else {
+    userFavorites.push(title);
+    window.showToast("Proizvod dodan u omiljeno! ❤️");
+  }
+
+  saveUserFavorites();
+  updateAuthNavbar();
+  window.updateAllFavButtons();
+
+  // Ako smo na stranici omiljeno, osvježi prikaz
+  if (window.location.hash.includes("/omiljeno") && typeof window.initFavoritesPage === "function") {
+    window.initFavoritesPage();
+  }
+};
+
+// Ažuriranje izgleda svih heart dugmadi na stranici
+window.updateAllFavButtons = function() {
+  document.querySelectorAll(".product").forEach((card) => {
+    const title = card.dataset.title;
+    if (!title) return;
+    const btn = card.querySelector(".product__fav-btn");
+    if (btn) {
+      const active = window.isFavorite(title);
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-label", active ? "Ukloni iz omiljenih" : "Dodaj u omiljeno");
+      const svg = btn.querySelector("svg");
+      if (svg) {
+        svg.setAttribute("fill", active ? "#ef4444" : "none");
+        svg.setAttribute("stroke", active ? "#ef4444" : "currentColor");
+      }
+    }
+  });
+
+  // Modal heart dugme
+  const modalTitle = document.getElementById("modal-title")?.textContent;
+  const modalFavBtn = document.getElementById("modal-fav-btn");
+  const modalFavText = document.getElementById("modal-fav-text");
+  if (modalFavBtn && modalTitle) {
+    const active = window.isFavorite(modalTitle);
+    modalFavBtn.classList.toggle("is-active", active);
+    if (modalFavText) modalFavText.textContent = active ? "Ukloni iz omiljenih" : "Dodaj u omiljeno";
+  }
+};
+
+// Automatsko ubacivanje srce dugmeta u sve .product kartice
+window.initFavoritesButtons = function() {
+  document.querySelectorAll(".product").forEach((card) => {
+    const title = card.dataset.title;
+    if (!title) return;
+
+    const imgWrap = card.querySelector(".product__image");
+    if (!imgWrap) return;
+
+    let favBtn = imgWrap.querySelector(".product__fav-btn");
+    if (!favBtn) {
+      favBtn = document.createElement("button");
+      favBtn.type = "button";
+      favBtn.className = "product__fav-btn";
+      favBtn.setAttribute("data-fav-btn", "1");
+      const active = window.isFavorite(title);
+      if (active) favBtn.classList.add("is-active");
+      favBtn.setAttribute("aria-label", active ? "Ukloni iz omiljenih" : "Dodaj u omiljeno");
+      favBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="${active ? '#ef4444' : 'none'}" stroke="${active ? '#ef4444' : 'currentColor'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      `;
+
+      favBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        window.toggleFavorite(title);
+      };
+
+      imgWrap.appendChild(favBtn);
+    } else {
+      const active = window.isFavorite(title);
+      favBtn.classList.toggle("is-active", active);
+      favBtn.setAttribute("aria-label", active ? "Ukloni iz omiljenih" : "Dodaj u omiljeno");
+      const svg = favBtn.querySelector("svg");
+      if (svg) {
+        svg.setAttribute("fill", active ? "#ef4444" : "none");
+        svg.setAttribute("stroke", active ? "#ef4444" : "currentColor");
+      }
+    }
+  });
+};
+
+// Inicijalizacija korisničke sesije
+async function initAuthSession() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    currentUser = session?.user || null;
+    if (currentUser) {
+      userFavorites = currentUser.user_metadata?.favorites || JSON.parse(localStorage.getItem("magnolia_favs_" + currentUser.id) || "[]");
+    } else {
+      userFavorites = [];
+    }
+    updateAuthNavbar();
+    window.initFavoritesButtons();
+  } catch (err) {
+    console.error("Greška pri provjeri sesije:", err);
+  }
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    currentUser = session?.user || null;
+    if (currentUser) {
+      userFavorites = currentUser.user_metadata?.favorites || JSON.parse(localStorage.getItem("magnolia_favs_" + currentUser.id) || "[]");
+    } else {
+      userFavorites = [];
+    }
+    updateAuthNavbar();
+    window.updateAllFavButtons();
+
+    if (event === "PASSWORD_RECOVERY") {
+      navigateTo("/reset-sifre");
+    }
+  });
+
+  const logoutBtn = document.getElementById("nav-logout-btn");
+  if (logoutBtn) {
+    logoutBtn.onclick = async () => {
+      nav?.classList.remove("is-open");
+      toggle?.setAttribute("aria-expanded", "false");
+      await supabase.auth.signOut();
+      currentUser = null;
+      userFavorites = [];
+      updateAuthNavbar();
+      window.updateAllFavButtons();
+      window.showToast("Uspješno ste se odjavili.");
+      navigateTo("/");
+    };
+  }
+}
+initAuthSession();
 
 // Ukloni "index.html" iz URL-a (da bude /#/..., ne /index.html#/.)
 if (window.location.pathname.endsWith("/index.html")) {
@@ -76,7 +272,7 @@ document.addEventListener("click", (e) => {
     if (isAdmin && Date.now() < expiry) {
       navigateTo("/admin");
     } else {
-      navigateTo("/login");
+      navigateTo("/admin-login");
     }
   }
 });
@@ -565,8 +761,21 @@ window.initCheckout = function() {
   subtotalEl.textContent = `${subtotal.toFixed(2)} KM`;
   totalEl.textContent = `${(subtotal + shipping).toFixed(2)} KM`;
 
+  // Auto-fill logged-in customer info if available
+  if (currentUser && form) {
+    const meta = currentUser.user_metadata || {};
+    if (form.elements["firstname"] && !form.elements["firstname"].value && meta.first_name) {
+      form.elements["firstname"].value = meta.first_name;
+    }
+    if (form.elements["lastname"] && !form.elements["lastname"].value && meta.last_name) {
+      form.elements["lastname"].value = meta.last_name;
+    }
+    if (form.elements["email"] && !form.elements["email"].value && currentUser.email) {
+      form.elements["email"].value = currentUser.email;
+    }
+  }
+
   let isSubmitting = false;
-  let countdownTimer = null;
 
   form.onsubmit = (e) => {
     e.preventDefault();
@@ -601,55 +810,26 @@ window.initCheckout = function() {
     };
 
     const modal = document.getElementById("order-status-modal");
+    const confirmView = document.getElementById("order-modal-confirm");
     const loadingView = document.getElementById("order-modal-loading");
     const successView = document.getElementById("order-modal-success");
     const errorView = document.getElementById("order-modal-error");
-    const spinnerSvg = modal?.querySelector(".order-spinner-svg");
-    const spinnerCircle = document.getElementById("order-spinner-circle");
-    const spinnerNumber = document.getElementById("order-spinner-number");
-    const infiniteSpinner = document.getElementById("order-spinner-infinite");
-    const modalTitle = document.getElementById("order-modal-title");
-    const modalDesc = document.getElementById("order-modal-desc");
-    const cancelArea = document.getElementById("order-cancel-area");
-    const cancelBtn = document.getElementById("order-cancel-btn");
-    const timerText = document.getElementById("order-cancel-timer-text");
 
-    if (!modal) {
+    const confirmCustomer = document.getElementById("order-confirm-customer");
+    const confirmAddress = document.getElementById("order-confirm-address");
+    const confirmTotal = document.getElementById("order-confirm-total");
+    const confirmAcceptBtn = document.getElementById("order-confirm-accept-btn");
+    const confirmCancelBtn = document.getElementById("order-confirm-cancel-btn");
+
+    if (!modal || !confirmView) {
       isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "1";
+        submitBtn.style.cursor = "pointer";
+      }
       return;
     }
-
-    // Reset views & states
-    loadingView.style.display = "block";
-    successView.style.display = "none";
-    errorView.style.display = "none";
-
-    if (spinnerSvg) spinnerSvg.style.display = "block";
-    if (spinnerNumber) {
-      spinnerNumber.style.display = "flex";
-      spinnerNumber.textContent = "10";
-    }
-    if (infiniteSpinner) infiniteSpinner.style.display = "none";
-    if (cancelArea) cancelArea.style.display = "block";
-
-    const circumference = 238.76;
-    if (spinnerCircle) {
-      spinnerCircle.style.transition = "none";
-      spinnerCircle.style.strokeDashoffset = "0";
-      void spinnerCircle.offsetWidth; // Trigger reflow
-      spinnerCircle.style.transition = "stroke-dashoffset 1s linear";
-    }
-
-    if (modalTitle) modalTitle.textContent = "Slanje narudžbe u toku...";
-    if (modalDesc) modalDesc.textContent = "Molimo vas za malo strpljenja dok pripremamo vašu narudžbu.";
-    if (timerText) timerText.textContent = "10s";
-
-    modal.classList.add("is-open");
-    modal.style.display = "flex";
-
-    const TOTAL_SECONDS = 10;
-    let secondsRemaining = TOTAL_SECONDS;
-    let cancelled = false;
 
     const resetSubmitBtn = () => {
       if (submitBtn) {
@@ -660,42 +840,47 @@ window.initCheckout = function() {
       isSubmitting = false;
     };
 
-    if (cancelBtn) {
-      cancelBtn.onclick = () => {
-        cancelled = true;
-        if (countdownTimer) clearInterval(countdownTimer);
-        modal.classList.remove("is-open");
-        modal.style.display = "none";
-        resetSubmitBtn();
-        window.showToast("Slanje narudžbe je poništeno.");
+    const closeModal = () => {
+      modal.classList.remove("is-open");
+      modal.style.display = "none";
+      resetSubmitBtn();
+    };
+
+    // Popuni podatke u confirmation view
+    if (confirmCustomer) confirmCustomer.textContent = orderData.customer;
+    if (confirmAddress) confirmAddress.textContent = `${formData.get("address")}, ${formData.get("city")}`;
+    if (confirmTotal) confirmTotal.textContent = `${orderData.total} KM`;
+
+    // Prikaz confirmation moda
+    confirmView.style.display = "block";
+    loadingView.style.display = "none";
+    successView.style.display = "none";
+    errorView.style.display = "none";
+
+    modal.classList.add("is-open");
+    modal.style.display = "flex";
+
+    // Ako korisnik otkaže - samo skloni modal
+    if (confirmCancelBtn) {
+      confirmCancelBtn.onclick = () => {
+        closeModal();
       };
     }
 
-    countdownTimer = setInterval(async () => {
-      if (cancelled) {
-        clearInterval(countdownTimer);
-        return;
-      }
-
-      secondsRemaining--;
-      if (secondsRemaining > 0) {
-        if (timerText) timerText.textContent = `${secondsRemaining}s`;
-        if (spinnerNumber) spinnerNumber.textContent = secondsRemaining;
-        if (spinnerCircle) {
-          const offset = ((TOTAL_SECONDS - secondsRemaining) / TOTAL_SECONDS) * circumference;
-          spinnerCircle.style.strokeDashoffset = offset.toString();
+    const overlay = modal.querySelector(".modal__overlay");
+    if (overlay) {
+      overlay.onclick = () => {
+        if (confirmView.style.display !== "none" || errorView.style.display !== "none") {
+          closeModal();
         }
-      } else {
-        clearInterval(countdownTimer);
-        if (spinnerCircle) spinnerCircle.style.strokeDashoffset = circumference.toString();
+      };
+    }
 
-        // 10s elapsed without cancellation - now submit to database
-        if (cancelArea) cancelArea.style.display = "none";
-        if (spinnerSvg) spinnerSvg.style.display = "none";
-        if (spinnerNumber) spinnerNumber.style.display = "none";
-        if (infiniteSpinner) infiniteSpinner.style.display = "block";
-        if (modalTitle) modalTitle.textContent = "Spremanje narudžbe u sistem...";
-        if (modalDesc) modalDesc.textContent = "Još samo trenutak, evidentiramo vašu narudžbu...";
+    // Ako prihvati - prikaži loading modal i pošalji u bazu
+    if (confirmAcceptBtn) {
+      confirmAcceptBtn.onclick = async () => {
+        confirmView.style.display = "none";
+        loadingView.style.display = "block";
 
         try {
           const { error } = await supabase.from("orders").insert([orderData]);
@@ -742,9 +927,7 @@ window.initCheckout = function() {
           const successDoneBtn = document.getElementById("order-success-close-btn");
           if (successDoneBtn) {
             successDoneBtn.onclick = () => {
-              modal.classList.remove("is-open");
-              modal.style.display = "none";
-              resetSubmitBtn();
+              closeModal();
               navigateTo("/");
             };
           }
@@ -758,23 +941,18 @@ window.initCheckout = function() {
 
           if (retryBtn) {
             retryBtn.onclick = () => {
-              modal.classList.remove("is-open");
-              modal.style.display = "none";
-              resetSubmitBtn();
-              if (submitBtn) submitBtn.click();
+              confirmAcceptBtn.click();
             };
           }
 
           if (closeErrBtn) {
             closeErrBtn.onclick = () => {
-              modal.classList.remove("is-open");
-              modal.style.display = "none";
-              resetSubmitBtn();
+              closeModal();
             };
           }
         }
-      }
-    }, 1000);
+      };
+    }
   };
 };
 
@@ -855,6 +1033,32 @@ function initProductModal() {
       
       // We no longer close the modal automatically to allow the user to keep browsing or reading
     };
+
+    // Handle modal "Favorite"
+    const modalFavBtn = document.getElementById("modal-fav-btn");
+    const modalFavText = document.getElementById("modal-fav-text");
+    if (modalFavBtn) {
+      const isFav = window.isFavorite(title);
+      modalFavBtn.classList.toggle("is-active", isFav);
+      if (modalFavText) modalFavText.textContent = isFav ? "Ukloni iz omiljenih" : "Dodaj u omiljeno";
+      const svg = modalFavBtn.querySelector("svg");
+      if (svg) {
+        svg.setAttribute("fill", isFav ? "#ef4444" : "none");
+        svg.setAttribute("stroke", isFav ? "#ef4444" : "currentColor");
+      }
+
+      modalFavBtn.onclick = (e) => {
+        e.stopPropagation();
+        window.toggleFavorite(title);
+        const nowFav = window.isFavorite(title);
+        modalFavBtn.classList.toggle("is-active", nowFav);
+        if (modalFavText) modalFavText.textContent = nowFav ? "Ukloni iz omiljenih" : "Dodaj u omiljeno";
+        if (svg) {
+          svg.setAttribute("fill", nowFav ? "#ef4444" : "none");
+          svg.setAttribute("stroke", nowFav ? "#ef4444" : "currentColor");
+        }
+      };
+    }
 
     requestAnimationFrame(() => {
       resetModalScroll();
@@ -946,6 +1150,441 @@ scrollBtn.addEventListener("click", () => {
   });
 });
 
+
+// --- CUSTOMER AUTH PAGE CONTROLLER ---
+window.initAuthPage = function() {
+  const tabLogin = document.getElementById("auth-tab-login");
+  const tabRegister = document.getElementById("auth-tab-register");
+  const tabsWrap = document.getElementById("auth-tabs-wrap");
+  const formLogin = document.getElementById("login-form");
+  const formRegister = document.getElementById("register-form");
+  const formForgot = document.getElementById("forgot-form");
+  const btnForgotLink = document.getElementById("btn-forgot-password-link");
+  const btnBackToLogin = document.getElementById("btn-back-to-login");
+  const alertBox = document.getElementById("auth-alert");
+  const mainTitle = document.getElementById("auth-main-title");
+  const mainDesc = document.getElementById("auth-main-desc");
+
+  if (!formLogin) return;
+
+  const showAlert = (msg, type = "error") => {
+    if (!alertBox) return;
+    alertBox.className = `auth-alert--${type}`;
+    alertBox.innerHTML = msg;
+    alertBox.style.display = "block";
+    alertBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+
+  const hideAlert = () => {
+    if (alertBox) alertBox.style.display = "none";
+  };
+
+  // Tab switching
+  const setTab = (tab) => {
+    hideAlert();
+    if (tab === "login") {
+      tabLogin?.classList.add("is-active");
+      tabRegister?.classList.remove("is-active");
+      if (formLogin) formLogin.style.display = "block";
+      if (formRegister) formRegister.style.display = "none";
+      if (formForgot) formForgot.style.display = "none";
+      if (tabsWrap) tabsWrap.style.display = "flex";
+      if (mainTitle) mainTitle.textContent = "Prijava";
+      if (mainDesc) mainDesc.textContent = "Prijavite se na vaš Magnolia korisnički račun.";
+    } else if (tab === "register") {
+      tabRegister?.classList.add("is-active");
+      tabLogin?.classList.remove("is-active");
+      if (formRegister) formRegister.style.display = "block";
+      if (formLogin) formLogin.style.display = "none";
+      if (formForgot) formForgot.style.display = "none";
+      if (tabsWrap) tabsWrap.style.display = "flex";
+      if (mainTitle) mainTitle.textContent = "Registracija";
+      if (mainDesc) mainDesc.textContent = "Kreirajte račun za brže naručivanje i omiljene proizvode.";
+    } else if (tab === "forgot") {
+      if (tabsWrap) tabsWrap.style.display = "none";
+      if (formLogin) formLogin.style.display = "none";
+      if (formRegister) formRegister.style.display = "none";
+      if (formForgot) formForgot.style.display = "block";
+      if (mainTitle) mainTitle.textContent = "Oporavak Lozinke";
+      if (mainDesc) mainDesc.textContent = "Zatražite link za postavljanje nove lozinke.";
+    }
+  };
+
+  if (tabLogin) tabLogin.onclick = () => setTab("login");
+  if (tabRegister) tabRegister.onclick = () => setTab("register");
+  if (btnForgotLink) btnForgotLink.onclick = () => setTab("forgot");
+  if (btnBackToLogin) btnBackToLogin.onclick = () => setTab("login");
+
+  // Show/Hide password toggles
+  document.querySelectorAll(".pwd-toggle").forEach((btn) => {
+    btn.onclick = () => {
+      const targetId = btn.dataset.target;
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      if (input.type === "password") {
+        input.type = "text";
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+      } else {
+        input.type = "password";
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+      }
+    };
+  });
+
+  // SIGN IN
+  formLogin.onsubmit = async (e) => {
+    e.preventDefault();
+    hideAlert();
+    const email = document.getElementById("login-email")?.value.trim();
+    const password = document.getElementById("login-password")?.value;
+    const submitBtn = document.getElementById("login-submit-btn");
+
+    if (!email || !password) {
+      showAlert("Molimo unesite vašu email adresu i lozinku.");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Prijavljivanje...";
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          showAlert(`
+            <strong>Vaš email još nije potvrđen.</strong><br>
+            Prilikom registracije poslali smo vam link za potvrdu na email.<br>
+            Provjerite vaš inbox (i spam folder).<br>
+            <button id="resend-conf-btn" type="button" class="btn btn--ghost" style="margin-top: 10px; padding: 6px 14px; font-size: 0.85rem;">
+              Pošalji potvrdni email ponovo
+            </button>
+          `, "error");
+
+          const resendBtn = document.getElementById("resend-conf-btn");
+          if (resendBtn) {
+            resendBtn.onclick = async () => {
+              resendBtn.disabled = true;
+              resendBtn.textContent = "Slanje...";
+              const { error: resendErr } = await supabase.auth.resend({
+                type: "signup",
+                email: email
+              });
+              if (resendErr) {
+                showAlert("Greška pri slanju: " + resendErr.message, "error");
+              } else {
+                showAlert("Potvrdni email je ponovo poslan! Molimo provjerite vaš inbox.", "success");
+              }
+            };
+          }
+          return;
+        }
+
+        if (error.message.includes("Invalid login credentials")) {
+          showAlert("Pogrešan email ili lozinka. Molimo pokušajte ponovo.");
+          return;
+        }
+
+        showAlert(error.message);
+        return;
+      }
+
+      // Success
+      currentUser = data.user;
+      userFavorites = currentUser.user_metadata?.favorites || JSON.parse(localStorage.getItem("magnolia_favs_" + currentUser.id) || "[]");
+      updateAuthNavbar();
+      window.updateAllFavButtons();
+      showAlert("✅ Uspješna prijava! Dobrodošli nazad.", "success");
+
+      setTimeout(() => {
+        navigateTo("/omiljeno");
+      }, 500);
+
+    } catch (err) {
+      showAlert("Došlo je do greške prilikom prijave. Pokušajte ponovo.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Prijavi se";
+    }
+  };
+
+  // SIGN UP
+  formRegister.onsubmit = async (e) => {
+    e.preventDefault();
+    hideAlert();
+
+    const firstName = document.getElementById("reg-firstname")?.value.trim();
+    const lastName = document.getElementById("reg-lastname")?.value.trim();
+    const email = document.getElementById("reg-email")?.value.trim();
+    const password = document.getElementById("reg-password")?.value;
+    const confirmPassword = document.getElementById("reg-confirm-password")?.value;
+    const submitBtn = document.getElementById("reg-submit-btn");
+
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      showAlert("Molimo popunite sva obavezna polja.");
+      return;
+    }
+
+    if (password.length < 6) {
+      showAlert("Lozinka mora sadržavati najmanje 6 znakova.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showAlert("Lozinke se ne podudaraju. Molimo provjerite unos.");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Kreiranje računa...";
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`.trim(),
+            favorites: []
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message.includes("User already registered")) {
+          showAlert("Korisnik sa ovom email adresom već postoji. Možete se odmah prijaviti.");
+        } else {
+          showAlert(error.message);
+        }
+        return;
+      }
+
+      showAlert(`
+        <strong>✅ Uspješna registracija!</strong><br>
+        Poslali smo sigurnosni potvrdni link na vaš email: <strong>${email}</strong>.<br>
+        Molimo otvorite vaš email i kliknite na link kako biste aktivirali svoj račun.
+      `, "success");
+
+      formRegister.reset();
+
+    } catch (err) {
+      showAlert("Došlo je do greške prilikom registracije. Pokušajte ponovo.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Kreiraj račun";
+    }
+  };
+
+  // FORGOT PASSWORD
+  formForgot.onsubmit = async (e) => {
+    e.preventDefault();
+    hideAlert();
+
+    const email = document.getElementById("forgot-email")?.value.trim();
+    const submitBtn = document.getElementById("forgot-submit-btn");
+
+    if (!email) {
+      showAlert("Molimo unesite vašu email adresu.");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Slanje linka...";
+
+    try {
+      const redirectUrl = window.location.origin + window.location.pathname;
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
+
+      if (error) {
+        showAlert("Greška: " + error.message);
+        return;
+      }
+
+      showAlert(`
+        <strong>✅ Zahtjev za reset lozinke je poslan!</strong><br>
+        Ako nalog sa emailom <strong>${email}</strong> postoji u sistemu, poslan vam je link za postavljanje nove lozinke. Molimo provjerite vaš inbox (i spam).
+      `, "success");
+
+      formForgot.reset();
+
+    } catch (err) {
+      showAlert("Došlo je do greške. Pokušajte ponovo.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Pošalji link za reset";
+    }
+  };
+};
+
+// --- RESET PASSWORD CONTROLLER ---
+window.initResetPasswordPage = function() {
+  const form = document.getElementById("reset-pwd-form");
+  const newPwdInput = document.getElementById("reset-password-input");
+  const confirmInput = document.getElementById("reset-confirm-input");
+  const submitBtn = document.getElementById("reset-submit-btn");
+  const alertBox = document.getElementById("reset-alert");
+
+  if (!form) return;
+
+  const showAlert = (msg, type = "error") => {
+    if (!alertBox) return;
+    alertBox.className = `auth-alert--${type}`;
+    alertBox.innerHTML = msg;
+    alertBox.style.display = "block";
+  };
+
+  document.querySelectorAll(".pwd-toggle").forEach((btn) => {
+    btn.onclick = () => {
+      const targetId = btn.dataset.target;
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      input.type = input.type === "password" ? "text" : "password";
+    };
+  });
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const newPwd = newPwdInput?.value;
+    const confirmPwd = confirmInput?.value;
+
+    if (!newPwd || !confirmPwd) {
+      showAlert("Molimo popunite sva polja.");
+      return;
+    }
+
+    if (newPwd.length < 6) {
+      showAlert("Lozinka mora imati najmanje 6 znakova.");
+      return;
+    }
+
+    if (newPwd !== confirmPwd) {
+      showAlert("Lozinke se ne podudaraju.");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Ažuriranje lozinke...";
+
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPwd
+      });
+
+      if (error) {
+        showAlert("Greška: " + error.message);
+        return;
+      }
+
+      showAlert("✅ Vaša lozinka je uspješno promijenjena! Preusmjeravanje...", "success");
+      setTimeout(() => {
+        navigateTo("/omiljeno");
+      }, 1200);
+
+    } catch (err) {
+      showAlert("Greška pri ažuriranju lozinke. Pokušajte ponovo.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Ažuriraj lozinku";
+    }
+  };
+};
+
+// --- FAVORITES PAGE CONTROLLER ---
+window.initFavoritesPage = function() {
+  const loadingEl = document.getElementById("favorites-loading");
+  const notLoggedInEl = document.getElementById("favorites-not-logged-in");
+  const emptyEl = document.getElementById("favorites-empty");
+  const gridEl = document.getElementById("favorites-grid");
+  const countBadge = document.getElementById("favorites-count-badge");
+  const countNum = document.getElementById("favorites-count-num");
+
+  if (!loadingEl) return;
+
+  // 1. Not logged in
+  if (!currentUser) {
+    loadingEl.style.display = "none";
+    if (notLoggedInEl) notLoggedInEl.style.display = "block";
+    if (emptyEl) emptyEl.style.display = "none";
+    if (gridEl) gridEl.style.display = "none";
+    if (countBadge) countBadge.style.display = "none";
+    return;
+  }
+
+  // 2. Logged in
+  if (notLoggedInEl) notLoggedInEl.style.display = "none";
+  loadingEl.style.display = "none";
+
+  if (userFavorites.length === 0) {
+    if (emptyEl) emptyEl.style.display = "block";
+    if (gridEl) gridEl.style.display = "none";
+    if (countBadge) countBadge.style.display = "none";
+    return;
+  }
+
+  // 3. Has favorites
+  if (emptyEl) emptyEl.style.display = "none";
+  if (countBadge) {
+    countBadge.style.display = "inline-block";
+    if (countNum) countNum.textContent = userFavorites.length;
+  }
+
+  if (!gridEl) return;
+  gridEl.style.display = "grid";
+
+  // Filter products matching userFavorites
+  const favProducts = PRODUCTS.filter((p) => userFavorites.includes(p.title));
+
+  gridEl.innerHTML = favProducts.map((p) => `
+    <article class="product"
+      data-title="${p.title}"
+      data-img="${p.img}"
+      data-price="${p.price}"
+      data-desc="${p.desc.replace(/"/g, '&quot;')}"
+    >
+      <div class="product__image">
+        <img src="${p.img}" alt="${p.title}">
+        <button class="product__fav-btn is-active" type="button" aria-label="Ukloni iz omiljenih" data-fav-btn>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="product__body">
+        <h3 class="product__name">${p.title}</h3>
+        <button class="btn-add-cart">
+          <span class="btn-add-cart__text">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Dodaj u korpu
+          </span>
+          <span class="btn-add-cart__check">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </span>
+        </button>
+      </div>
+    </article>
+  `).join("");
+
+  // Attach favorite removal click listener directly
+  gridEl.querySelectorAll(".product__fav-btn").forEach((btn) => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const card = btn.closest(".product");
+      const title = card?.dataset.title;
+      if (title) {
+        window.toggleFavorite(title);
+      }
+    };
+  });
+};
 
 if (!window.location.hash) window.location.hash = "#/";
 router();

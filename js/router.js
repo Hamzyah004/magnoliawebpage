@@ -3,7 +3,11 @@ const routes = [
   { path: "/o-nama", view: "./views/about.html", title: "O nama • Magnolia" },
   { path: "/proizvodi", view: "./views/products.html", title: "Proizvodi • Magnolia" },
   { path: "/kontakt", view: "./views/contact.html", title: "Kontakt • Magnolia" },
-  { path: "/login", view: "./views/login.html", title: "Login • Magnolia" },
+  { path: "/prijava", view: "./views/auth.html", title: "Prijava i Registracija • Magnolia" },
+  { path: "/login", view: "./views/auth.html", title: "Prijava • Magnolia" },
+  { path: "/reset-sifre", view: "./views/reset-password.html", title: "Nova Lozinka • Magnolia" },
+  { path: "/omiljeno", view: "./views/favorites.html", title: "Omiljeni Proizvodi • Magnolia" },
+  { path: "/admin-login", view: "./views/login.html", title: "Admin Login • Magnolia" },
   { path: "/admin", view: "./views/admin.html", title: "Admin • Magnolia" },
   { path: "/checkout", view: "./views/checkout.html", title: "Checkout • Magnolia" },
 ];
@@ -24,10 +28,14 @@ async function loadView(viewPath) {
 
 // ---- HASH ROUTING HELPERS ----
 function getHashPath() {
-  // URL: https://site.com/#/proizvodi  -> raw: "/proizvodi"
-  // URL: https://site.com/#/          -> raw: "/"
-  const raw = window.location.hash.replace(/^#/, ""); // "#/x" -> "/x"
-  return normalize(raw || "/");
+  const hash = window.location.hash.replace(/^#/, "");
+  if (hash.includes("type=recovery")) {
+    return "/reset-sifre";
+  }
+  if (hash.includes("type=signup") || hash.includes("access_token=")) {
+    return "/omiljeno";
+  }
+  return normalize(hash || "/");
 }
 
 function setHashPath(path) {
@@ -49,14 +57,14 @@ export async function router() {
   const app = document.getElementById("app");
   const path = getHashPath();
 
-  // Basic Auth Check
+  // Basic Auth Check for Secret Admin
   if (path === "/admin") {
     const isAdmin = sessionStorage.getItem("isAdmin") === "true";
     const expiry = parseInt(sessionStorage.getItem("adminExpiry") || "0");
     const isSessionValid = isAdmin && Date.now() < expiry;
 
     if (!isSessionValid) {
-      navigateTo("/login");
+      navigateTo("/admin-login");
       return;
     }
   }
@@ -86,15 +94,33 @@ export async function router() {
       }
     }
 
-    if (path === "/login") {
-      if (typeof initLoginForm === "function") {
-        initLoginForm();
+    if (path === "/prijava" || path === "/login") {
+      if (typeof window.initAuthPage === "function") {
+        window.initAuthPage();
+      }
+    }
+
+    if (path === "/reset-sifre") {
+      if (typeof window.initResetPasswordPage === "function") {
+        window.initResetPasswordPage();
+      }
+    }
+
+    if (path === "/omiljeno") {
+      if (typeof window.initFavoritesPage === "function") {
+        window.initFavoritesPage();
+      }
+    }
+
+    if (path === "/admin-login") {
+      if (typeof window.initLoginForm === "function") {
+        window.initLoginForm();
       }
     }
 
     if (path === "/admin") {
-      if (typeof initAdminPanel === "function") {
-        initAdminPanel();
+      if (typeof window.initAdminPanel === "function") {
+        window.initAdminPanel();
       }
     }
 
@@ -102,6 +128,11 @@ export async function router() {
       if (typeof initCheckout === "function") {
         initCheckout();
       }
+    }
+
+    // Attach favorites buttons to all products rendered in current view
+    if (typeof window.initFavoritesButtons === "function") {
+      window.initFavoritesButtons();
     }
 
   } catch (e) {

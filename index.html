@@ -29,11 +29,20 @@
       </a>
 
       <!-- RIGHT: navigation -->
-      <nav class="nav">
+      <nav class="nav" id="main-nav">
         <a class="nav__link" href="#/" data-link>Home</a>
         <a class="nav__link" href="#/o-nama" data-link>O nama</a>
         <a class="nav__link" href="#/proizvodi" data-link>Proizvodi</a>
+        <a class="nav__link" href="#/omiljeno" data-link id="nav-favorites-link" style="display: none;">
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            Omiljeno
+            <span id="nav-favorites-count" class="badge" style="padding: 2px 7px; font-size: 11px; margin-left: 2px; display: none;">0</span>
+          </span>
+        </a>
         <a class="nav__link nav__cta" href="#/kontakt" data-link>Kontakt</a>
+        <a class="nav__link" href="#/prijava" data-link id="nav-login-link">Prijava</a>
+        <button id="nav-logout-btn" type="button" class="nav__link" style="display: none; background: none; border: none; cursor: pointer; text-align: left; font-family: inherit; font-size: inherit; color: var(--muted);">Odjavi se</button>
       </nav>
 
       <!-- mobile -->
@@ -67,6 +76,10 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </span>
           </button>
+          <button id="modal-fav-btn" type="button" class="btn btn--ghost" style="width: 100%; margin-top: 10px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.95rem;">
+            <svg class="heart-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            <span id="modal-fav-text">Dodaj u omiljeno</span>
+          </button>
           <p class="lead" id="modal-desc" style="margin-top:20px;"></p>
         </div>
       </div>
@@ -78,30 +91,56 @@
     <div class="modal__overlay"></div>
     <div class="modal__dialog modal__dialog--small" role="dialog" aria-modal="true" style="max-width: 440px; border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 25px 60px rgba(11, 27, 58, 0.25); border: 1px solid var(--line);">
       
-      <!-- Phase 1: Loading & Countdown / Cancel State -->
-      <div id="order-modal-loading" class="modal__text" style="text-align: center; padding: 40px 24px;">
-        <div class="order-spinner-wrap" style="position: relative; width: 88px; height: 88px; margin: 0 auto 20px;">
-          <svg class="order-spinner-svg" width="88" height="88" viewBox="0 0 88 88" style="transform: rotate(-90deg);">
-            <circle cx="44" cy="44" r="38" stroke="rgba(11, 27, 58, 0.08)" stroke-width="5" fill="none" />
-            <circle id="order-spinner-circle" cx="44" cy="44" r="38" stroke="var(--gold)" stroke-width="5" stroke-linecap="round" fill="none" stroke-dasharray="238.76" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear;" />
+      <!-- Phase 1: Confirmation State -->
+      <div id="order-modal-confirm" class="modal__text" style="text-align: center; padding: 36px 24px;">
+        <div style="background: rgba(201, 162, 74, 0.12); width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: var(--gold);">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
           </svg>
-          <div id="order-spinner-number" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800; color: var(--navy);">10</div>
-          <div id="order-spinner-infinite" class="order-infinite-spinner" style="display: none; position: absolute; inset: 0; border: 4px solid rgba(201, 162, 74, 0.2); border-top-color: var(--gold); border-radius: 50%;"></div>
+        </div>
+
+        <h2 class="h2" style="font-size: 1.35rem; margin-bottom: 8px; color: var(--navy);">Potvrda narudžbe</h2>
+        <p class="lead" style="font-size: 0.95rem; margin: 0 auto 18px; color: var(--muted); line-height: 1.5;">
+          Molimo vas da potvrdite slanje vaše narudžbe. Plaćanje se vrši gotovinom pouzećem prilikom preuzimanja pošiljke.
+        </p>
+
+        <div id="order-confirm-details" style="background: var(--soft); border-radius: 14px; padding: 14px 16px; text-align: left; margin-bottom: 22px; font-size: 0.9rem; border: 1px solid var(--line);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span class="muted">Kupac:</span>
+            <strong id="order-confirm-customer" style="color: var(--navy);"></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span class="muted">Adresa / Grad:</span>
+            <strong id="order-confirm-address" style="color: var(--navy);"></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 1rem;">
+            <span style="font-weight: 700; color: var(--navy);">Ukupno za platiti:</span>
+            <strong id="order-confirm-total" style="color: var(--gold); font-size: 1.15rem;"></strong>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="order-confirm-accept-btn" type="button" class="btn btn--primary" style="width: 100%; padding: 14px; font-size: 1rem;">
+            Potvrdi narudžbu
+          </button>
+          <button id="order-confirm-cancel-btn" type="button" class="btn btn--ghost" style="width: 100%; padding: 12px; font-size: 0.95rem;">
+            Otkaži
+          </button>
+        </div>
+      </div>
+
+      <!-- Phase 2: Loading State -->
+      <div id="order-modal-loading" class="modal__text" style="display: none; text-align: center; padding: 44px 24px;">
+        <div class="order-spinner-wrap" style="width: 76px; height: 76px; margin: 0 auto 20px;">
+          <div class="order-infinite-spinner" style="width: 76px; height: 76px;"></div>
         </div>
 
         <h2 id="order-modal-title" class="h2" style="font-size: 1.35rem; margin-bottom: 8px; color: var(--navy);">Slanje narudžbe u toku...</h2>
-        <p id="order-modal-desc" class="lead" style="font-size: 0.95rem; margin: 0 auto 20px; color: var(--muted); line-height: 1.5;">
-          Molimo vas za malo strpljenja dok pripremamo vašu narudžbu.
+        <p id="order-modal-desc" class="lead" style="font-size: 0.95rem; margin: 0 auto; color: var(--muted); line-height: 1.5;">
+          Molimo vas za malo strpljenja dok pripremamo i bilježimo vašu narudžbu u sistem.
         </p>
-
-        <div id="order-cancel-area">
-          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
-            Možete poništiti slanje još <strong id="order-cancel-timer-text" style="color: var(--navy);">10s</strong>:
-          </p>
-          <button id="order-cancel-btn" type="button" class="btn btn--ghost" style="width: 100%; color: #ef4444; border-color: #fecaca; padding: 12px; font-size: 0.95rem;">
-            Poništi slanje narudžbe
-          </button>
-        </div>
       </div>
 
       <!-- Phase 2: Success State -->

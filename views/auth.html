@@ -1,0 +1,140 @@
+<section class="section section--soft" style="min-height: calc(100vh - 160px); display: flex; align-items: center; padding: 40px 0;">
+  <div class="container" style="max-width: 460px;">
+    <div class="card auth-card" style="padding: 36px 28px; background: #ffffff; border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--line);">
+      
+      <!-- Brand icon header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="background: rgba(201, 162, 74, 0.12); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: var(--gold);">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <h1 id="auth-main-title" class="h2" style="font-size: 1.5rem; margin-bottom: 4px; color: var(--navy);">Moj Račun</h1>
+        <p id="auth-main-desc" class="muted" style="font-size: 0.9rem; margin: 0;">Prijavite se ili kreirajte račun za omiljene proizvode</p>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div id="auth-tabs-wrap" class="auth-tabs" style="display: flex; background: var(--soft); padding: 4px; border-radius: 12px; margin-bottom: 22px; border: 1px solid var(--line);">
+        <button id="auth-tab-login" type="button" class="auth-tab is-active" style="flex: 1; padding: 10px 12px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; background: #fff; color: var(--navy); box-shadow: 0 2px 6px rgba(11,27,58,0.06); transition: all 0.2s;">
+          Prijava
+        </button>
+        <button id="auth-tab-register" type="button" class="auth-tab" style="flex: 1; padding: 10px 12px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.2s;">
+          Registracija
+        </button>
+      </div>
+
+      <!-- Alert Box -->
+      <div id="auth-alert" style="display: none; padding: 12px 16px; border-radius: 12px; margin-bottom: 18px; font-size: 0.9rem; line-height: 1.45;"></div>
+
+      <!-- VIEW 1: PRIJAVA (Sign In) -->
+      <form id="login-form" novalidate>
+        <div class="auth-field" style="margin-bottom: 16px; text-align: left;">
+          <label for="login-email" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--navy); margin-bottom: 6px;">Email adresa</label>
+          <input type="email" id="login-email" required placeholder="vas.email@primjer.com" autocomplete="email"
+                 style="width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+        </div>
+
+        <div class="auth-field" style="margin-bottom: 10px; text-align: left; position: relative;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="login-password" style="font-size: 0.88rem; font-weight: 600; color: var(--navy);">Lozinka</label>
+            <button id="btn-forgot-password-link" type="button" style="background: none; border: none; font-size: 0.82rem; color: var(--gold); cursor: pointer; padding: 0; font-weight: 600;">
+              Zaboravljena lozinka?
+            </button>
+          </div>
+          <div style="position: relative;">
+            <input type="password" id="login-password" required placeholder="Unesite vašu lozinku" autocomplete="current-password"
+                   style="width: 100%; padding: 12px 42px 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+            <button type="button" class="pwd-toggle" data-target="login-password" aria-label="Prikaži lozinku"
+                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px;">
+              <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="btn btn--primary" style="width: 100%; padding: 14px; font-size: 1rem; margin-top: 16px;">
+          Prijavi se
+        </button>
+      </form>
+
+      <!-- VIEW 2: REGISTRACIJA (Sign Up) -->
+      <form id="register-form" style="display: none;" novalidate>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="auth-field" style="text-align: left;">
+            <label for="reg-firstname" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--navy); margin-bottom: 6px;">Ime</label>
+            <input type="text" id="reg-firstname" required placeholder="Vaše ime" autocomplete="given-name"
+                   style="width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+          </div>
+          <div class="auth-field" style="text-align: left;">
+            <label for="reg-lastname" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--navy); margin-bottom: 6px;">Prezime</label>
+            <input type="text" id="reg-lastname" required placeholder="Vaše prezime" autocomplete="family-name"
+                   style="width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+          </div>
+        </div>
+
+        <div class="auth-field" style="margin-bottom: 14px; text-align: left;">
+          <label for="reg-email" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--navy); margin-bottom: 6px;">Email adresa</label>
+          <input type="email" id="reg-email" required placeholder="vas.email@primjer.com" autocomplete="email"
+                 style="width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+        </div>
+
+        <div class="auth-field" style="margin-bottom: 14px; text-align: left;">
+          <label for="reg-password" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--navy); margin-bottom: 6px;">Lozinka (min. 6 znakova)</label>
+          <div style="position: relative;">
+            <input type="password" id="reg-password" required minlength="6" placeholder="Najmanje 6 znakova" autocomplete="new-password"
+                   style="width: 100%; padding: 12px 42px 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+            <button type="button" class="pwd-toggle" data-target="reg-password" aria-label="Prikaži lozinku"
+                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px;">
+              <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-field" style="margin-bottom: 16px; text-align: left;">
+          <label for="reg-confirm-password" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--navy); margin-bottom: 6px;">Potvrdite lozinku</label>
+          <div style="position: relative;">
+            <input type="password" id="reg-confirm-password" required minlength="6" placeholder="Ponovite lozinku" autocomplete="new-password"
+                   style="width: 100%; padding: 12px 42px 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+            <button type="button" class="pwd-toggle" data-target="reg-confirm-password" aria-label="Prikaži lozinku"
+                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px;">
+              <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 18px; text-align: left; line-height: 1.45; background: rgba(11,27,58,0.03); padding: 10px 12px; border-radius: 10px;">
+          ℹ️ Nakon registracije, poslat ćemo vam sigurnosni link na email za potvrdu računa.
+        </div>
+
+        <button type="submit" id="reg-submit-btn" class="btn btn--primary" style="width: 100%; padding: 14px; font-size: 1rem;">
+          Kreiraj račun
+        </button>
+      </form>
+
+      <!-- VIEW 3: ZABORAVLJENA LOZINKA (Forgot Password) -->
+      <form id="forgot-form" style="display: none;" novalidate>
+        <div style="text-align: left; margin-bottom: 18px;">
+          <button id="btn-back-to-login" type="button" style="background: none; border: none; color: var(--navy); cursor: pointer; padding: 0; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Nazad na prijavu
+          </button>
+          <h2 class="h2" style="font-size: 1.25rem; margin-bottom: 6px; color: var(--navy);">Zaboravili ste lozinku?</h2>
+          <p class="muted" style="font-size: 0.88rem; line-height: 1.5; margin: 0;">
+            Unesite vašu email adresu i poslat ćemo vam siguran link za postavljanje nove lozinke.
+          </p>
+        </div>
+
+        <div class="auth-field" style="margin-bottom: 20px; text-align: left;">
+          <label for="forgot-email" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--navy); margin-bottom: 6px;">Email adresa</label>
+          <input type="email" id="forgot-email" required placeholder="vas.email@primjer.com" autocomplete="email"
+                 style="width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s;">
+        </div>
+
+        <button type="submit" id="forgot-submit-btn" class="btn btn--primary" style="width: 100%; padding: 14px; font-size: 1rem;">
+          Pošalji link za reset
+        </button>
+      </form>
+
+    </div>
+  </div>
+</section>
