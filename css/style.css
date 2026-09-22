@@ -91,13 +91,19 @@ img{ max-width:100%; display:block; }
   color: #fff !important;
   font-weight: 600;
   white-space: nowrap;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 .nav__cta:active{ background: #07142d; transform: scale(0.98); }
+
+.nav__cta.is-active{
+  background: rgba(201,162,74,.18);
+  color: var(--navy) !important;
+}
 
 @media (hover: hover) and (pointer: fine) {
   .nav__link:hover{ background: rgba(11,27,58,.06); }
   .nav__cta:hover{ background: #07142d; color: #fff !important; }
+  .nav__cta.is-active:hover{ background: rgba(201,162,74,.26); color: var(--navy) !important; }
 }
 
 .nav__toggle{
