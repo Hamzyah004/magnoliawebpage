@@ -1,5 +1,5 @@
-import { router, navigateTo } from "./router.js";
-import { PRODUCTS } from "./products-data.js";
+import { router, navigateTo } from "./router.js?v=2.0.1";
+import { PRODUCTS } from "./products-data.js?v=2.0.1";
 
 const SUPABASE_URL = "https://rmjtrveqslcklvprikfo.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtanRydmVxc2xja2x2cHJpa2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTY2NjQsImV4cCI6MjA5Mzg5MjY2NH0.7JKU0NgvTTw7pSAQ35GsT6Ka_UNUnN4xoc2aO0awpxU";

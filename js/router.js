@@ -49,8 +49,14 @@ export function navigateTo(pathOrHref) {
   // Allow passing "/#/proizvodi" OR "/proizvodi"
   const s = String(pathOrHref || "");
   const afterHash = s.includes("#") ? (s.split("#")[1] || "/") : s; // "/#/x" -> "/x"
-  setHashPath(afterHash);
-  // router() will run via "hashchange"
+  const p = normalize(afterHash);
+  const targetHash = p === "/" ? "#/" : `#${p}`;
+
+  if (window.location.hash !== targetHash) {
+    window.location.hash = targetHash;
+  }
+  // Guarantee view rendering across all browsers
+  router();
 }
 
 export async function router() {
