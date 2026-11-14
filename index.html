@@ -41,6 +41,7 @@
           </span>
         </a>
         <a class="nav__link" href="#/kontakt" data-link>Kontakt</a>
+        <a class="nav__link" href="#/admin" data-link id="nav-admin-panel-link" style="display: none;">Panel</a>
         <a class="nav__link nav__cta" href="#/prijava" data-link id="nav-login-link">Prijava</a>
         <button id="nav-logout-btn" type="button" class="nav__link nav__cta" style="display: none; border: none; cursor: pointer; font-family: inherit; font-size: inherit; white-space: nowrap; text-align: center;">Odjavi se</button>
       </nav>
@@ -190,6 +191,61 @@
     </div>
   </div>
 
+  <!-- Admin Edit Price Modal -->
+  <div class="modal" id="admin-price-modal" aria-hidden="true" style="display:none;">
+    <div class="modal__overlay" data-admin-price-close></div>
+    <div class="modal__dialog modal__dialog--small" role="dialog" aria-modal="true" aria-labelledby="admin-price-modal-heading" style="max-width: 430px; width: 100%; border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 25px 60px rgba(11, 27, 58, 0.25); border: 1px solid var(--line); position: relative;">
+      <button class="modal__close" type="button" aria-label="Zatvori" data-admin-price-close style="top: 14px; right: 14px;">×</button>
+
+      <div class="modal__text" style="text-align: center; padding: 36px 26px 28px;">
+        <div style="background: rgba(201, 162, 74, 0.14); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: var(--gold);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+        </div>
+
+        <span class="badge" style="margin-bottom: 8px; font-size: 0.75rem;">Admin Uređivanje</span>
+        <h2 id="admin-price-modal-heading" class="h2" style="font-size: 1.25rem; margin: 4px 0 16px; color: var(--navy);">Promjena cijene artikla</h2>
+
+        <div style="background: var(--soft); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; border: 1px solid var(--line); text-align: left;">
+          <div style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 4px;">Proizvod</div>
+          <div id="admin-edit-product-title" style="font-weight: 800; color: var(--navy); font-size: 1.05rem; margin-bottom: 12px; line-height: 1.35;"></div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed var(--line);">
+            <span style="font-size: 0.88rem; color: var(--muted); font-weight: 600;">Trenutna cijena:</span>
+            <strong id="admin-edit-current-price" style="color: var(--gold); font-size: 1.1rem; font-weight: 800;"></strong>
+          </div>
+        </div>
+
+        <form id="admin-price-form" style="text-align: left;">
+          <div class="auth-field" style="margin-bottom: 16px;">
+            <label for="admin-edit-new-price-input" style="display: block; font-size: 0.88rem; font-weight: 700; color: var(--navy); margin-bottom: 6px;">Nova cijena (KM)</label>
+            <input
+              id="admin-edit-new-price-input"
+              type="text"
+              inputmode="decimal"
+              placeholder="npr. 35.00"
+              required
+              style="width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); font-size: 1rem; font-family: inherit; color: var(--navy); font-weight: 600; outline: none; transition: border-color 0.2s, box-shadow 0.2s;"
+            />
+          </div>
+
+          <div id="admin-edit-price-alert" style="display: none; padding: 10px 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 14px;"></div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="admin-edit-confirm-btn" type="submit" class="btn btn--primary" style="width: 100%; padding: 13px; font-size: 0.98rem;">
+              Potvrdi novu cijenu
+            </button>
+            <button id="admin-edit-cancel-btn" type="button" class="btn btn--ghost" data-admin-price-close style="width: 100%; padding: 11px; font-size: 0.92rem;">
+              Otkaži
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
 
 
@@ -256,7 +312,7 @@
   </button>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="js/app.js?v=2.0.1"></script>
+  <script type="module" src="js/app.js?v=2.0.2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
     emailjs.init("cIwVQboFkKcmA--1Q");

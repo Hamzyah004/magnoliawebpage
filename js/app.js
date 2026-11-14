@@ -1,25 +1,143 @@
-import { router, navigateTo } from "./router.js?v=2.0.1";
-import { PRODUCTS } from "./products-data.js?v=2.0.1";
+import { router, navigateTo } from "./router.js?v=2.0.2";
+import { PRODUCTS } from "./products-data.js?v=2.0.2";
 
 const SUPABASE_URL = "https://rmjtrveqslcklvprikfo.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtanRydmVxc2xja2x2cHJpa2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTY2NjQsImV4cCI6MjA5Mzg5MjY2NH0.7JKU0NgvTTw7pSAQ35GsT6Ka_UNUnN4xoc2aO0awpxU";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- CUSTOMER AUTH & FAVORITES STATE ---
+// --- CUSTOMER AUTH, ADMIN MODE & PRODUCT PRICES STATE ---
 let currentUser = null;
 let userFavorites = [];
+let priceOverrides = {};
+
+try {
+  priceOverrides = JSON.parse(localStorage.getItem("magnolia_product_prices") || "{}") || {};
+} catch (e) {
+  priceOverrides = {};
+}
+
+// Provjera da li je Admin sesija trenutno aktivna
+window.isAdminMode = function() {
+  const isAdmin = sessionStorage.getItem("isAdmin") === "true";
+  const expiry = parseInt(sessionStorage.getItem("adminExpiry") || "0");
+  if (isAdmin && Date.now() < expiry) {
+    return true;
+  }
+  if (isAdmin) {
+    sessionStorage.removeItem("isAdmin");
+    sessionStorage.removeItem("adminExpiry");
+  }
+  return false;
+};
+
+// Odjava sa Admin panela i povratak na korisničku stranicu (i korisnički račun ako je bio prijavljen)
+window.exitAdminMode = function() {
+  sessionStorage.removeItem("isAdmin");
+  sessionStorage.removeItem("adminExpiry");
+  const navEl = document.querySelector(".nav");
+  const toggleEl = document.querySelector(".nav__toggle");
+  navEl?.classList.remove("is-open");
+  toggleEl?.setAttribute("aria-expanded", "false");
+  updateAuthNavbar();
+  window.initFavoritesButtons();
+  window.showToast("Odjavljeni ste sa Admin panela.");
+  navigateTo("/");
+};
+
+// Primjena ažuriranih cijena na sve proizvode u memoriji i DOM-u
+window.applyPriceOverrides = function() {
+  if (!priceOverrides || typeof priceOverrides !== "object") return;
+
+  PRODUCTS.forEach((p) => {
+    if (priceOverrides[p.title]) {
+      p.price = priceOverrides[p.title];
+    }
+  });
+
+  document.querySelectorAll(".product").forEach((card) => {
+    const title = card.dataset.title;
+    if (title && priceOverrides[title]) {
+      card.dataset.price = priceOverrides[title];
+    }
+  });
+
+  // Ako je modal proizvoda otvoren, osvježi prikazanu cijenu
+  const modalTitle = document.getElementById("modal-title")?.textContent;
+  const modalPrice = document.getElementById("modal-price");
+  if (modalTitle && modalPrice && priceOverrides[modalTitle]) {
+    modalPrice.textContent = priceOverrides[modalTitle];
+  }
+
+  // Osvježi cijene artikala u korpi ako već postoje
+  try {
+    if (typeof cart !== "undefined" && Array.isArray(cart) && cart.length > 0) {
+      let cartChanged = false;
+      cart.forEach((item) => {
+        if (item.name && priceOverrides[item.name] && item.price !== priceOverrides[item.name]) {
+          item.price = priceOverrides[item.name];
+          cartChanged = true;
+        }
+      });
+      if (cartChanged) {
+        localStorage.setItem("magnolia_cart", JSON.stringify(cart));
+        if (typeof updateCartUI === "function") updateCartUI();
+      }
+    }
+  } catch (e) {}
+};
+
+// Učitavanje globalnih cijena iz Supabase baze kako bi svi korisnici vidjeli nove cijene
+async function loadProductPricesFromSupabase() {
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("items")
+      .eq("id", "SYS_PRICE_CONFIG")
+      .maybeSingle();
+
+    if (!error && data && data.items && typeof data.items === "object" && !Array.isArray(data.items)) {
+      priceOverrides = { ...priceOverrides, ...data.items };
+      localStorage.setItem("magnolia_product_prices", JSON.stringify(priceOverrides));
+      window.applyPriceOverrides();
+    }
+  } catch (err) {
+    console.warn("Greška pri učitavanju cijena proizvoda:", err);
+  }
+}
 
 // Proveri da li je proizvod u omiljenim
 window.isFavorite = function(title) {
   return userFavorites.includes(title);
 };
 
-// Ažuriranje elemenata u navigaciji u zavisnosti od prijave
+// Ažuriranje elemenata u navigaciji u zavisnosti od prijave (Admin vs Korisnik)
 function updateAuthNavbar() {
   const favLink = document.getElementById("nav-favorites-link");
   const favCount = document.getElementById("nav-favorites-count");
+  const adminPanelLink = document.getElementById("nav-admin-panel-link");
   const loginLink = document.getElementById("nav-login-link");
   const logoutBtn = document.getElementById("nav-logout-btn");
+
+  const isAdmin = window.isAdminMode();
+  document.body.classList.toggle("is-admin-mode", isAdmin);
+
+  if (isAdmin) {
+    // U Admin režimu nema korisničkog računa, omiljenih ni korpe
+    if (typeof window.closeCart === "function") {
+      window.closeCart();
+    }
+    if (favLink) favLink.style.display = "none";
+    if (loginLink) loginLink.style.display = "none";
+    if (adminPanelLink) adminPanelLink.style.display = "inline-flex";
+    if (logoutBtn) {
+      logoutBtn.style.display = "inline-flex";
+      logoutBtn.classList.add("nav__cta");
+      logoutBtn.textContent = "Odjavi se (Admin)";
+    }
+    return;
+  }
+
+  if (adminPanelLink) adminPanelLink.style.display = "none";
 
   if (currentUser) {
     if (favLink) favLink.style.display = "inline-flex";
@@ -41,6 +159,7 @@ function updateAuthNavbar() {
     if (logoutBtn) logoutBtn.style.display = "none";
   }
 }
+window.updateAuthNavbar = updateAuthNavbar;
 
 // Spasavanje omiljenih u cache i Supabase
 async function saveUserFavorites() {
@@ -110,14 +229,53 @@ window.updateAllFavButtons = function() {
   }
 };
 
-// Automatsko ubacivanje srce dugmeta u sve .product kartice
+// Automatsko ubacivanje srce dugmeta (za korisnike) ili olovka/edit dugmeta (za Admina) u sve .product kartice
 window.initFavoritesButtons = function() {
+  window.applyPriceOverrides();
+  const isAdmin = window.isAdminMode();
+
   document.querySelectorAll(".product").forEach((card) => {
+    if (card.classList.contains("product--static")) return;
     const title = card.dataset.title;
     if (!title) return;
 
     const imgWrap = card.querySelector(".product__image");
     if (!imgWrap) return;
+
+    if (isAdmin) {
+      // Ukloni korisničko srce dugme ako postoji
+      const oldFav = imgWrap.querySelector(".product__fav-btn");
+      if (oldFav) oldFav.remove();
+
+      let editBtn = imgWrap.querySelector(".product__edit-btn");
+      if (!editBtn) {
+        editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "product__edit-btn";
+        editBtn.setAttribute("data-edit-btn", "1");
+        editBtn.setAttribute("aria-label", "Uredi cijenu proizvoda");
+        editBtn.setAttribute("title", "Uredi cijenu");
+        editBtn.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+        `;
+
+        editBtn.onclick = (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          window.openAdminPriceModal(title);
+        };
+
+        imgWrap.appendChild(editBtn);
+      }
+      return;
+    }
+
+    // Korisnički režim: ukloni admin edit dugme ako postoji
+    const oldEdit = imgWrap.querySelector(".product__edit-btn");
+    if (oldEdit) oldEdit.remove();
 
     let favBtn = imgWrap.querySelector(".product__fav-btn");
     if (!favBtn) {
@@ -154,8 +312,168 @@ window.initFavoritesButtons = function() {
   });
 };
 
-// Inicijalizacija korisničke sesije
+// --- ADMIN MODAL ZA UREĐIVANJE CIJENE PROIZVODA ---
+let currentEditingProductTitle = null;
+
+window.openAdminPriceModal = function(title) {
+  if (!window.isAdminMode()) return;
+  const modal = document.getElementById("admin-price-modal");
+  if (!modal) return;
+
+  currentEditingProductTitle = title;
+
+  // Pronađi trenutnu cijenu
+  let currentPrice = priceOverrides[title];
+  if (!currentPrice) {
+    const prodObj = PRODUCTS.find((p) => p.title === title);
+    if (prodObj) currentPrice = prodObj.price;
+  }
+  if (!currentPrice) {
+    document.querySelectorAll(".product").forEach((card) => {
+      if (card.dataset.title === title && card.dataset.price) {
+        currentPrice = card.dataset.price;
+      }
+    });
+  }
+  currentPrice = currentPrice || "0.00 KM";
+
+  const titleEl = document.getElementById("admin-edit-product-title");
+  const currentPriceEl = document.getElementById("admin-edit-current-price");
+  const inputEl = document.getElementById("admin-edit-new-price-input");
+  const alertEl = document.getElementById("admin-edit-price-alert");
+
+  if (titleEl) titleEl.textContent = title;
+  if (currentPriceEl) currentPriceEl.textContent = currentPrice;
+  if (alertEl) alertEl.style.display = "none";
+  if (inputEl) {
+    inputEl.value = "";
+    const numMatch = currentPrice.match(/[\d.,]+/);
+    inputEl.placeholder = numMatch ? `npr. ${numMatch[0]} KM` : "npr. 35.00 KM";
+  }
+
+  modal.classList.add("is-open");
+  modal.style.display = "flex";
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  setTimeout(() => {
+    inputEl?.focus();
+  }, 50);
+};
+
+function initAdminPriceModal() {
+  const modal = document.getElementById("admin-price-modal");
+  if (!modal) return;
+
+  const form = document.getElementById("admin-price-form");
+  const inputEl = document.getElementById("admin-edit-new-price-input");
+  const confirmBtn = document.getElementById("admin-edit-confirm-btn");
+  const alertEl = document.getElementById("admin-edit-price-alert");
+  const closeEls = modal.querySelectorAll("[data-admin-price-close]");
+
+  const closeAdminPriceModal = () => {
+    modal.classList.remove("is-open");
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+    if (!document.querySelector(".modal.is-open")) {
+      document.body.style.overflow = "";
+    }
+    currentEditingProductTitle = null;
+  };
+
+  closeEls.forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeAdminPriceModal();
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("is-open")) {
+      closeAdminPriceModal();
+    }
+  });
+
+  if (form) {
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentEditingProductTitle) return;
+
+      const rawVal = (inputEl?.value || "").trim().replace(",", ".");
+      const numMatch = rawVal.match(/\d+(\.\d+)?/);
+
+      if (!numMatch || isNaN(parseFloat(numMatch[0])) || parseFloat(numMatch[0]) <= 0) {
+        if (alertEl) {
+          alertEl.className = "auth-alert--error";
+          alertEl.textContent = "Molimo unesite ispravnu novu cijenu (npr. 35 ili 35.00).";
+          alertEl.style.display = "block";
+        }
+        return;
+      }
+
+      const numericPrice = parseFloat(numMatch[0]);
+      const formattedPrice = `${numericPrice.toFixed(2)} KM`;
+
+      if (alertEl) alertEl.style.display = "none";
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Čuvanje...";
+      }
+
+      try {
+        priceOverrides[currentEditingProductTitle] = formattedPrice;
+        localStorage.setItem("magnolia_product_prices", JSON.stringify(priceOverrides));
+        window.applyPriceOverrides();
+
+        // Sačuvaj globalno u Supabase bazu da svi korisnici vide novu cijenu
+        const configRow = {
+          id: "SYS_PRICE_CONFIG",
+          date: new Date().toLocaleDateString("bs-BA"),
+          customer: "SYSTEM_CONFIG",
+          email: "system@magnolia.ba",
+          phone: "-",
+          address: "-",
+          items: priceOverrides,
+          subtotal: "0.00",
+          shipping: "0.00",
+          total: "0.00",
+          status: "SYS_CONFIG"
+        };
+
+        const { error } = await supabase
+          .from("orders")
+          .upsert([configRow], { onConflict: "id" });
+
+        if (error) {
+          console.warn("Upozorenje pri čuvanju cijene na Supabase:", error);
+        }
+
+        closeAdminPriceModal();
+        window.showToast(`Cijena ažurirana na ${formattedPrice}!`);
+      } catch (err) {
+        console.error("Greška pri ažuriranju cijene:", err);
+        if (alertEl) {
+          alertEl.className = "auth-alert--error";
+          alertEl.textContent = "Došlo je do greške pri čuvanju cijene. Pokušajte ponovo.";
+          alertEl.style.display = "block";
+        }
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Potvrdi novu cijenu";
+        }
+      }
+    };
+  }
+}
+initAdminPriceModal();
+
+// Inicijalizacija korisničke sesije i cijena
 async function initAuthSession() {
+  window.applyPriceOverrides();
+  loadProductPricesFromSupabase();
+
   try {
     const { data: { session } } = await supabase.auth.getSession();
     currentUser = session?.user || null;
@@ -178,7 +496,7 @@ async function initAuthSession() {
       userFavorites = [];
     }
     updateAuthNavbar();
-    window.updateAllFavButtons();
+    window.initFavoritesButtons();
 
     if (event === "PASSWORD_RECOVERY") {
       navigateTo("/reset-sifre");
@@ -188,6 +506,10 @@ async function initAuthSession() {
   const logoutBtn = document.getElementById("nav-logout-btn");
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
+      if (window.isAdminMode()) {
+        window.exitAdminMode();
+        return;
+      }
       nav?.classList.remove("is-open");
       toggle?.setAttribute("aria-expanded", "false");
       await supabase.auth.signOut();
@@ -338,8 +660,9 @@ window.initLoginForm = function() {
 
     if (entered === stored.code) {
       sessionStorage.setItem("isAdmin", "true");
-      sessionStorage.setItem("adminExpiry", (Date.now() + 10 * 60 * 1000).toString());
+      sessionStorage.setItem("adminExpiry", (Date.now() + 2 * 60 * 60 * 1000).toString());
       sessionStorage.removeItem("admin_2fa");
+      updateAuthNavbar();
       navigateTo("/admin");
     } else {
       status.style.color = "red";
@@ -352,9 +675,7 @@ window.initAdminPanel = function() {
   const logoutBtn = document.getElementById("admin-logout");
   if (logoutBtn) {
     logoutBtn.onclick = () => {
-      sessionStorage.removeItem("isAdmin");
-      sessionStorage.removeItem("adminExpiry");
-      navigateTo("/");
+      window.exitAdminMode();
     };
   }
 
@@ -368,9 +689,10 @@ window.initAdminPanel = function() {
     const ordersTable = document.getElementById("orders-table-body");
     if (!ordersTable) return;
 
-    const { data: orders, error } = await supabase
+    const { data: rawOrders, error } = await supabase
       .from("orders")
       .select("*")
+      .neq("id", "SYS_PRICE_CONFIG")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -378,6 +700,8 @@ window.initAdminPanel = function() {
       ordersTable.innerHTML = `<tr><td colspan="6" style="padding: 48px; text-align: center; color: red;">Greška pri učitavanju narudžbi.</td></tr>`;
       return;
     }
+
+    const orders = (rawOrders || []).filter(o => o.id !== "SYS_PRICE_CONFIG" && o.status !== "SYS_CONFIG");
     
     // Update Stats - Target only div.h1 inside the stats cards
     const stats = document.querySelectorAll(".card div.h1"); 
@@ -611,6 +935,7 @@ window.showToast = function(message) {
 };
 
 window.addToCart = function(product, btn) {
+  if (window.isAdminMode()) return;
   const wasEmpty = cart.length === 0;
   const existing = cart.find(item => item.name === product.name);
   
@@ -640,6 +965,7 @@ window.addToCart = function(product, btn) {
 };
 
 window.openCart = function() {
+  if (window.isAdminMode()) return;
   const drawer = document.getElementById("cart-drawer");
   if (!drawer) return;
   drawer.classList.add("is-open");

@@ -63,16 +63,22 @@ export async function router() {
   const app = document.getElementById("app");
   const path = getHashPath();
 
+  const isAdmin = sessionStorage.getItem("isAdmin") === "true";
+  const expiry = parseInt(sessionStorage.getItem("adminExpiry") || "0");
+  const isAdminSessionValid = isAdmin && Date.now() < expiry;
+
   // Basic Auth Check for Secret Admin
   if (path === "/admin") {
-    const isAdmin = sessionStorage.getItem("isAdmin") === "true";
-    const expiry = parseInt(sessionStorage.getItem("adminExpiry") || "0");
-    const isSessionValid = isAdmin && Date.now() < expiry;
-
-    if (!isSessionValid) {
+    if (!isAdminSessionValid) {
       navigateTo("/admin-login");
       return;
     }
+  }
+
+  // Admin mode blocks customer account & shopping routes
+  if (isAdminSessionValid && (path === "/checkout" || path === "/omiljeno" || path === "/prijava" || path === "/login")) {
+    navigateTo("/admin");
+    return;
   }
 
   const route =
@@ -83,6 +89,14 @@ export async function router() {
     app.innerHTML = html;
     document.title = route.title || "Magnolia";
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (typeof window.updateAuthNavbar === "function") {
+      window.updateAuthNavbar();
+    }
+
+    if (typeof window.applyPriceOverrides === "function") {
+      window.applyPriceOverrides();
+    }
 
     // highlight active nav (compare hash paths)
     document.querySelectorAll(".nav__link").forEach((a) => {
